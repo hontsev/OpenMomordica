@@ -80,14 +80,18 @@ namespace Native.Csharp.App.Actors
                     info.wea = o["data"][i]["wea"].ToString();
                     info.win = new string[2];
                     info.win[0]= o["data"][i]["win"][0].ToString();
-                    info.win[1] = o["data"][i]["win"][1].ToString();
+                    try
+                    {
+                        info.win[1] = o["data"][i]["win"][1].ToString();
+                    }
+                    catch { }
                     info.winspeed = o["data"][i]["win_speed"].ToString();
 
                     infos[i] = info;
                 }
                 catch(Exception e)
                 {
-                    return "";
+                    //return "*NOTFOUNDCITY*";
                     //return $"{e.Message}\r\n{e.StackTrace}";
                 }
                 
@@ -109,7 +113,7 @@ namespace Native.Csharp.App.Actors
                 return infos[3].getDescription();
             }
 
-            return "";
+             return infos[0].getDescription();
         }
 
        

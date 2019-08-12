@@ -95,6 +95,7 @@
   <ItemGroup>
     <Compile Include="App\Actors\BaiduSearchActor.cs" />
     <Compile Include="App\Actors\BeastProofActor.cs" />
+    <Compile Include="App\Actors\BilibiliLiveActor.cs" />
     <Compile Include="App\Actors\CmdActor.cs" />
     <Compile Include="App\Actors\DiceActor.cs" />
     <Compile Include="App\Actors\FileIOActor.cs" />

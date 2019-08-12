@@ -50,6 +50,7 @@ namespace Native.Csharp.App.Event
         DiceActor dice = new DiceActor();
         WeatherActor weather = new WeatherActor();
         TranslateActor trans = new TranslateActor();
+        BilibiliLiveActor bilibili = new BilibiliLiveActor();
 
         object mainmutex = new object();
 
@@ -351,6 +352,14 @@ namespace Native.Csharp.App.Event
                     else sendPrivate(user, transstr);
                     return true;
                 }
+            }
+
+            if (msg == "虚拟区谁在播")
+            {
+                string xnq = bilibili.getLiveNum();
+                if (isGroup) sendGroup(group, user, xnq);
+                else sendPrivate(user, xnq);
+                return true;
             }
 
             // 骰子
@@ -662,10 +671,11 @@ namespace Native.Csharp.App.Event
                     }
                     if (thissentence.Length>0 && !sgn.Contains(thissentence.ToString().Last().ToString()))
                     {
-                        if (mode == "佛") thissentence.Append(" ");
+                        string[] noSgnModes = new string[] { "佛", "emoji" };
+                        if (noSgnModes.Contains(mode)) thissentence.Append(" ");
                         else thissentence.Append("，");
                         result += thissentence.ToString();
-                        if (result.Length > 0) result = result.Substring(0, result.Length - 1) + "。";
+                        if (result.Length > 0 && !noSgnModes.Contains(mode)) result = result.Substring(0, result.Length - 1) + "。";
                     }
                     else
                     {
@@ -700,8 +710,22 @@ namespace Native.Csharp.App.Event
                     question = question.Substring(name.Length).Trim();
                     if (question.StartsWith("，")) question = question.Substring(1);
                     if (question.StartsWith(",")) question = question.Substring(1);
-                    //question = question.Replace("[CQ:emoji,id=", "");
-                    Regex.Replace(question, "\\[CQ[^\\]]+\\]", "");
+                    int maxnum = 100;
+                    do
+                    {
+                        int begin = question.IndexOf("[CQ:emoji");
+                        if (begin < 0) break;
+                        int end = question.IndexOf("]");
+                        if (end < 0) break;
+                        try
+                        {
+                            question = question.Substring(0, begin) + question.Substring(end + 1);
+                        }
+                        catch
+                        {
+                            break;
+                        }
+                    } while (maxnum-- > 0);
                     return true;
                 }
             }
@@ -709,7 +733,6 @@ namespace Native.Csharp.App.Event
             if (question.Contains(CqCode_At(myQQ)))
             {
                 question = question.Replace(CqCode_At(myQQ), "");
-                Regex.Replace(question, "\\[CQ[^\\]]+\\]", "");
                 return true;
             }
             question = question.Trim();
