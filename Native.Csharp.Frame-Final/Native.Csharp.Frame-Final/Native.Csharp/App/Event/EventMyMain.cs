@@ -55,6 +55,9 @@ namespace Native.Csharp.App.Event
 
         static MomordicaMain()
         {
+            byte[] buffer = Guid.NewGuid().ToByteArray();//生成字节数组
+            int iRoot = BitConverter.ToInt32(buffer, 0);//利用BitConvert方法把字节数组转换为整数
+            Random rand = new Random(iRoot);//以这个生成的整数为种子
             _mmdk = new MomordicaMain();
         }
 
@@ -645,11 +648,11 @@ namespace Native.Csharp.App.Event
                 int sentencemaxlen = 7;
                 int sentencemaxwordnum = 4;
 
-                int sentences = rand.Next(1, sentencemaxnum);
+                int sentences = rand.Next(sentencemaxnum);
 
                 for (int i = 0; i < sentences; i++)
                 {
-                    int thislen = rand.Next(0, sentencemaxlen);
+                    int thislen = rand.Next(1, sentencemaxlen);
                     StringBuilder thissentence = new StringBuilder();
                     int wordnum = 0;
                     while (thissentence.Length < thislen && wordnum < sentencemaxwordnum)
@@ -657,12 +660,20 @@ namespace Native.Csharp.App.Event
                         wordnum++;
                         thissentence.Append(modedict[mode][rand.Next(0, modedict[mode].Count - 1)]);
                     }
-                    if (mode == "佛") thissentence.Append(" ");
-                    else thissentence.Append("，");
-                    result += thissentence.ToString();
-                    if (result.Length > 0) result = result.Substring(0, result.Length - 1) + "。";
+                    if (thissentence.Length>0 && !sgn.Contains(thissentence.ToString().Last().ToString()))
+                    {
+                        if (mode == "佛") thissentence.Append(" ");
+                        else thissentence.Append("，");
+                        result += thissentence.ToString();
+                        if (result.Length > 0) result = result.Substring(0, result.Length - 1) + "。";
+                    }
+                    else
+                    {
+                        result += thissentence.ToString();
+                    }
                 }
                 result = getHexie(result);
+                if (string.IsNullOrWhiteSpace(result)) result = sgn[rand.Next(sgn.Count)];
                 return result;
             }
             else
@@ -670,6 +681,8 @@ namespace Native.Csharp.App.Event
                 return getAnswerChaos(user, question);
             }
         }
+
+        
 
         /// <summary>
         /// 检查这个句子是否是在问bot，如果是才作回应
