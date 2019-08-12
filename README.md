@@ -1,7 +1,8 @@
 # OpenMomordica 开源苦瓜
 
-Momordica VDM coolQ bot version
-虚拟人形苦瓜 酷Q机器人版
+Momordica VDM - coolQ bot version
+
+虚拟人形苦瓜 - 酷Q机器人版
 
 ## 基本介绍
 
