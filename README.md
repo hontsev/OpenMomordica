@@ -20,7 +20,7 @@ Momordica VDM - coolQ bot version
 
 ## 使用方法
 
-- 本程序的运行依赖 `windows 7.0+` `.net framework 4.5+` `coolQ Air` 请务必安装
+- 本程序的运行依赖 `.net framework 4.5+` `coolQ Air` 请务必安装
 - 将本程序生成的包含 `app.dll` `app.json` 放置于酷q（coolQ）程序根目录下的 `./dev/me.cqp.hontsev.demo/` 中，使酷Q启动时可以自动加载本插件
 - 启动酷q，登录要挂载的qq账号，并在酷q的插件管理界面启动本插件
 
