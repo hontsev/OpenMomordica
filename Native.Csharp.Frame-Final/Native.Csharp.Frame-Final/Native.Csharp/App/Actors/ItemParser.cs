@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Native.Csharp.App.Actors
@@ -47,7 +48,7 @@ namespace Native.Csharp.App.Actors
 
     class ItemParser
     {
-        public string dataDir = @"./Data/";
+        public string replacefile = @"replacewords.txt";
         Dictionary<string, Link> link1 = new Dictionary<string, Link>();
         Dictionary<string, Link> link2 = new Dictionary<string, Link>();
         Dictionary<string, Area> areas = new Dictionary<string, Area>();
@@ -60,23 +61,25 @@ namespace Native.Csharp.App.Actors
 
         }
 
-        public void init(string replacefile)
+        public void init(string path)
         {
             try
             {
                 wordReplace = new Dictionary<string, string>();
-                var wlist = File.ReadAllLines(replacefile, Encoding.UTF8);
-                foreach (var line in wlist)
+                var lines = FileIOActor.readLines(path + replacefile);
+                foreach(var line in lines)
                 {
-                    var items = line.TrimEnd().Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    var items = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
                     if (items.Length >= 2)
                     {
                         wordReplace[items[1]] = items[0];
                     }
-                    //wordReplace[]
                 }
             }
-            catch { }
+            catch (Exception e)
+            {
+                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+            }
 
         }
 
@@ -117,5 +120,61 @@ namespace Native.Csharp.App.Actors
             string[] splits = { " ", "\t", "\n", "\r", ",", ".", "?", " ", "!", ";", ":", "，", "。", "”", "“", "‘", "’", "：", "；", "？", "！", "、", "（", "）", "(", ")", "\"", "'", "—", "《", "》", "【", "】", "…" };
             return str.Split(splits, StringSplitOptions.RemoveEmptyEntries);
         }
+
+
+        /// <summary>
+        /// 去除HTML标记 
+        /// </summary>
+        /// <param name="strHtml">包括HTML的源码 </param>
+        /// <returns>已经去除后的文字</returns>
+        public static string StripHTML(string strHtml)
+        {
+            string[] aryReg = { @"<script[^>]*?>.*?</script>", @"<(\/\s*)?!?((\w+:)?\w+)(\w+(\s*=?\s*(([""'])(\\[""'tbnr]|[^\7])*?\7|\w+)|.{0})|\s)*?(\/\s*)?>", @"([\r\n])[\s]+", @"&(quot|#34);", @"&(amp|#38);", @"&(lt|#60);", @"&(gt|#62);", @"&(nbsp|#160);", @"&(iexcl|#161);", @"&(cent|#162);", @"&(pound|#163);", @"&(copy|#169);", @"&#(\d+);", @"-->", @"<!--.*\n" };
+            string[] aryRep = { "", "", "", "\"", "&", "<", ">", " ", "\xa1", "\xa2", "\xa3", "\xa9", "", "\r\n", "" };
+            string newReg = aryReg[0];
+            string strOutput = strHtml;
+            for (int i = 0; i < aryReg.Length; i++)
+            {
+                Regex regex = new Regex(aryReg[i], RegexOptions.IgnoreCase);
+                strOutput = regex.Replace(strOutput, aryRep[i]);
+            }
+            strOutput.Replace("<", ""); strOutput.Replace(">", "");
+            strOutput.Replace("\r\n", ""); return strOutput;
+        }
+
+
+
+        /// <summary>
+        /// 某些字段的和谐
+        /// 输出前的必备步骤
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string getHexie(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return "";
+            str = str.Replace("习近平", "🐻");
+            str = str.Replace("江泽民", "🐸");
+            str = str.Replace("毛泽东", "🐱");
+            str = str.Replace("毛主席", "🐱");
+            str = str.Replace("彭丽媛", "🐎🐎");
+            str = str.Replace("法轮功", "⭕");
+            str = str.Replace("共产党", "☭");
+            str = str.Replace("共产主义", "☭");
+            str = str.Replace("革命", "gm");
+            return str;
+        }
+
+        /// <summary>
+        /// 获取酷Q "At某人" 代码
+        /// </summary>
+        /// <param name="qqId">QQ号, 填写 -1 为At全体成员</param>
+        /// <param name="addSpacing">默认为True, At后添加空格, 可使At更规范美观. 如果不需要添加空格, 请置本参数为False</param>
+        /// <returns></returns>
+        public static string CqCode_At(long qqId = -1, bool addSpacing = true)
+        {
+            return string.Format("[CQ:at,qq={0}]{1}", (qqId == -1) ? "all" : qqId.ToString(), addSpacing ? " " : string.Empty);
+        }
+
     }
 }

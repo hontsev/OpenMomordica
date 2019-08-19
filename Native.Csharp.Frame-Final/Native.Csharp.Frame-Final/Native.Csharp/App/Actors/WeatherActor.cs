@@ -33,18 +33,26 @@ namespace Native.Csharp.App.Actors
         {
 
         }
-
+        string weathercodeListName = "weathercode.txt";
         Dictionary<string, string> citycodes = new Dictionary<string, string>();
 
-        public void init(string citycodePath)
+        public void init(string path)
         {
-            citycodes = new Dictionary<string, string>();
-            var lines = FileIOActor.readTxtList(citycodePath);
-            foreach(var line in lines)
+            try
             {
-                var items = line.Trim().Split('\t');
-                if (items.Length >= 2) citycodes[items[1]] = items[0].Trim();
+                citycodes = new Dictionary<string, string>();
+                var lines = FileIOActor.readLines(path + weathercodeListName);
+                foreach (var line in lines)
+                {
+                    var items = line.Split('\t');
+                    if (items.Length >= 2) citycodes[items[1]] = items[0];
+                }
             }
+            catch (Exception e)
+            {
+                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+            }
+
         }
 
         public string getWeather(string city, string daystr="今天")

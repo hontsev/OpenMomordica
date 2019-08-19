@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,14 +16,28 @@ namespace Native.Csharp.App.Actors
     /// </summary>
     class BaiduSearchActor
     {
+        string path = "";
+        string imageWords = "imagewords.txt";
+        string answerPath = "answer\\";
+        Random rand = new Random();
         ItemParser parser = new ItemParser();
+        Dictionary<string, string> baiduWordReplaceDict = new Dictionary<string, string>();
         public BaiduSearchActor()
         {
         }
 
-        public void init(string replacefile)
+        public void init(string path)
         {
-            parser.init(replacefile);
+            this.path = path;
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+            parser.init(path);
+
+            var lines = FileIOActor.readLines(path + imageWords);
+            foreach (var line in lines)
+            {
+                var items = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (items.Length >= 2) baiduWordReplaceDict[items[0]] = items[1];
+            }
         }
 
         /// <summary>
@@ -30,14 +45,20 @@ namespace Native.Csharp.App.Actors
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
-        private static string replaceImageWords(string str)
+        private string replaceImageWords(string str)
         {
-            //str = ItemParser.removeBlank(str);
-            List<List<string>> baiduWordList = FileIOActor.readBaiduWords(Common.AppDirectory + "\\BaiduWord.txt");
-            foreach (var match in baiduWordList)
+            try
             {
-                str = str.Replace("<img class=\"word-replace\" src=\"https://zhidao.baidu.com/api/getdecpic?picenc=" + match[0] + "\">", match[1]);
+                foreach (var key in baiduWordReplaceDict.Keys)
+                {
+                    str = str.Replace($"<img class=\"word-replace\" src=\"https://zhidao.baidu.com/api/getdecpic?picenc={key}\">", baiduWordReplaceDict[key]);
+                }
             }
+            catch (Exception e)
+            {
+                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+            }
+
             return str;
         }
 
@@ -50,6 +71,90 @@ namespace Native.Csharp.App.Actors
             return res;
         }
 
+
+
+        /// <summary>
+        /// 从百度知识图谱数据中取得问题的答案
+        /// 百度知识图谱包括一些常识信息，也能数学运算、查汇率之类的。
+        /// 和百度搜索结果中的“智能”显示的知识部分一致
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public string getKGAnswer(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return "";
+            var res = getBaiduKGResult(str);
+            if (res.Length > 0)
+            {
+                return res[0].Trim();
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// 从百度知道的问答中找回复
+        /// 提取出多条搜索结果，然后从中随机选一个
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public string getZhidaoAnswer(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return "";
+            string result = "";
+            var res1 = getBaiduZhidaoAnswers(str, 5);
+            if (res1.Length > 0)
+            {
+                int maxlen = 150;
+                int findwidth = 20;
+                var tmp = res1[rand.Next(0, res1.Length)].Replace("展开全部", "").Replace("\r", "").Trim();
+                tmp = ItemParser.StripHTML(tmp);
+                try
+                {
+                    if (!Directory.Exists(path + answerPath)) Directory.CreateDirectory(path + answerPath);
+                    File.WriteAllText($"{path}{answerPath}{str}.txt", tmp);
+                }
+                catch (Exception e)
+                {
+                    FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                }
+
+                if (tmp.Length <= maxlen)
+                {
+                    result = tmp;
+                }
+                else
+                {
+                    var tmp2 = tmp;//.Split(new char[] { '\n' },StringSplitOptions.RemoveEmptyEntries)[0];
+                    if (tmp2.Length >= maxlen)
+                    {
+                        int cutPos = tmp2.IndexOfAny(new char[] { '。', '！', '？', '…', '!', '?' }, maxlen - findwidth);
+                        if (cutPos > 0 && cutPos < maxlen + findwidth)
+                        {
+                            result = tmp2.Substring(0, cutPos);
+                        }
+                        else
+                        {
+                            cutPos = tmp2.IndexOfAny(new char[] { ',', '；', '、', ',', '.', '》', '”', '"', '\'' }, maxlen - findwidth);
+                            if (cutPos > 0 && cutPos < maxlen + findwidth)
+                            {
+                                result = tmp2.Substring(0, cutPos);
+                            }
+                            else
+                            {
+                                result = tmp2.Substring(0, maxlen);
+                            }
+                        }
+                    }
+                    else
+                        result = tmp2;
+                }
+            }
+
+            return result;
+        }
         /// <summary>
         /// 暂时不可用
         /// </summary>

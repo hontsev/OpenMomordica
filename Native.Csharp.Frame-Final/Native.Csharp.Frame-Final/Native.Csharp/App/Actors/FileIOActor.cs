@@ -12,6 +12,44 @@ namespace Native.Csharp.App.Actors
     /// </summary>
     class FileIOActor
     {
+        static string logFile = "log.txt";
+        public static void log(string content)
+        {
+            try
+            {
+                File.AppendAllText(logFile, $"[{DateTime.Now.ToString("yyyyMMdd HH:mm:ss")}]{content}\r\n", Encoding.UTF8);
+            }
+            catch
+            {
+
+            }
+        }
+
+        /// <summary>
+        /// 读取单个txt文件内容
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public static string readTxtFile(string fileName, Encoding encoding)
+        {
+            try
+            {
+                using (FileStream file = new FileStream(fileName, FileMode.OpenOrCreate))
+                {
+                    using (StreamReader reader = new StreamReader(file, encoding))
+                    {
+                        return reader.ReadToEnd();
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                log(e.Message + "\r\n" + e.StackTrace);
+                return null;
+            }
+
+        }
+
         /// <summary>
         /// 读取单个txt文件内容
         /// </summary>
@@ -19,61 +57,46 @@ namespace Native.Csharp.App.Actors
         /// <returns></returns>
         public static string readTxtFile(string fileName)
         {
-            Encoding encoding = Encoding.UTF8;
-            //Thread.Sleep(1000);
-            using (FileStream file = new FileStream(fileName, FileMode.OpenOrCreate))
-            {
-                StreamReader reader = new StreamReader(file, encoding);
-                string preContent = reader.ReadToEnd();
-                reader.Dispose();
-                return preContent;
-            }
+            return readTxtFile(fileName, Encoding.UTF8);
         }
 
-        public static string[] readTxtList(string fileName)
+        /// <summary>
+        /// 读取txt文件列表
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public static ICollection<string> readLines(string fileName)
         {
-            string all = readTxtFile(fileName);
-            return all.Replace("\r", "\n").Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            return readLines(fileName, Encoding.UTF8);
         }
 
-        public static List<List<string>> readBaiduWords(string fileName)
+        public static ICollection<string> readLines(string fileName, Encoding encoding)
         {
-            Encoding encoding = Encoding.UTF8;
-            List<List<string>> baiduWords = new List<List<string>>();
-            using (FileStream file = new FileStream(fileName, FileMode.OpenOrCreate))
+            List<string> res = new List<string>();
+            try
             {
-                StreamReader reader = new StreamReader(file, encoding);
-                while (true)
+                using (FileStream file = new FileStream(fileName, FileMode.OpenOrCreate))
                 {
-                    string res = reader.ReadLine();
-                    if (String.IsNullOrEmpty(res)) break;
-                    List<string> s = new List<string>(res.Split(' '));
-                    baiduWords.Add(s);
+                    using (StreamReader r = new StreamReader(file, encoding))
+                    {
+                        string line;
+                        while ((line = r.ReadLine()) != null)
+                        {
+                            line = line.Trim();
+                            if(!string.IsNullOrWhiteSpace(line))
+                            {
+                                res.Add(line);
+                            }
+                        }
+                    }
                 }
-                reader.Dispose();
             }
-            return baiduWords;
-        }
-
-        public static List<List<string>> readSpecialAnswerFromFile(string fileName)
-        {
-            Encoding encoding = Encoding.UTF8;
-            List<List<string>> specials = new List<List<string>>();
-            using (FileStream file = new FileStream(fileName, FileMode.OpenOrCreate))
+            catch (Exception e)
             {
-                StreamReader reader = new StreamReader(file, encoding);
-                while (true)
-                {
-                    string res = reader.ReadLine();
-                    if (String.IsNullOrEmpty(res)) break;
-                    List<string> s = new List<string>(res.Split(' '));
-                    specials.Add(s);
-                }
-                reader.Dispose();
+                log(e.Message + "\r\n" + e.StackTrace);
             }
-            return specials;
+            return res;
         }
-
 
 
 

@@ -13,6 +13,7 @@ namespace Native.Csharp.App.Actors
     /// </summary>
     class BeastProofActor
     {
+        string bihuaDictName = "bihua.txt";
         Dictionary<string, int> bhdict = new Dictionary<string, int>();
         List<double> tbase = new List<double>();
 
@@ -33,19 +34,22 @@ namespace Native.Csharp.App.Actors
         {
         }
 
-        public void init(string bhpath)
+        public void init(string path)
         {
             try
             {
                 bhdict = new Dictionary<string, int>();
-                var f3s = File.ReadAllLines(bhpath);
-                foreach (var v in f3s)
+                var lines = FileIOActor.readLines(path + bihuaDictName);
+                foreach (var line in lines)
                 {
-                    string[] vitem = v.Trim().Split('\t');
+                    string[] vitem = line.Split('\t');
                     if (vitem.Length >= 2) bhdict[vitem[0]] = int.Parse(vitem[1]);
                 }
             }
-            catch { }
+            catch (Exception e)
+            {
+                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+            }
         }
 
         /// <summary>
