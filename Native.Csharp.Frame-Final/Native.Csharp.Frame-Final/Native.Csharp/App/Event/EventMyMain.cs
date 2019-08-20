@@ -41,6 +41,7 @@ namespace Native.Csharp.App.Event
         string DataProofPath = "\\DataProof\\";
         string DataWeatherPath = "\\DataWeather\\";
         string DataModePath = "\\DataMode\\";
+        string DataBilibiliPath = "\\DataBilibili\\";
 
         bool inited = false;
         object dealmsgMutex = new object();
@@ -92,6 +93,7 @@ namespace Native.Csharp.App.Event
                         baidu.init(rootDict + DataBaiduPath);
                         proof.init(rootDict + DataProofPath);
                         weather.init(rootDict + DataWeatherPath);
+                        bilibili.init(rootDict + DataBilibiliPath);
 
                         userBlacklist = new Dictionary<long, long>();
                         groupBlacklist = new Dictionary<long, long>();
@@ -273,12 +275,55 @@ namespace Native.Csharp.App.Event
                 }
             }
 
+            // bilibili 功能
             if (msg == "虚拟区谁在播")
             {
                 string xnq = bilibili.getLiveNum();
                 if (isGroup) sendGroup(group, user, xnq);
                 else sendPrivate(user, xnq);
                 return true;
+            }
+            if (msg.Contains("在播吗"))
+            {
+                string test = msg.Replace("在播吗", "");
+                log(test);
+                string res = bilibili.getLiveInfo(test);
+                if (isGroup) sendGroup(group, user, res);
+                else sendPrivate(user, res);
+                return true;
+            }
+            if (msg.Contains("播了吗"))
+            {
+                string test = msg.Replace("播了吗", "");
+                log(test);
+                string res = bilibili.getLiveInfo(test);
+                if (isGroup) sendGroup(group, user, res);
+                else sendPrivate(user, res);
+                return true;
+            }
+            if (msg.StartsWith("设置别名"))
+            {
+                var items = msg.Replace("设置别名","").Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (items.Length >= 2)
+                {
+                    bilibili.setReplaceName(items[0], items[1]);
+                    string res = "好";
+                    if (isGroup) sendGroup(group, user, res);
+                    else sendPrivate(user, res);
+                    return true;
+                }
+            }
+            if (msg.StartsWith("设置房间号"))
+            {
+                var items = msg.Replace("设置房间号", "").Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (items.Length >= 2)
+                {
+                    bilibili.setRoomId(items[0], items[1]);
+                    string res = "好";
+                    if (isGroup) sendGroup(group, user, res);
+                    else sendPrivate(user, res);
+                    return true;
+                }
             }
 
             // 骰子
