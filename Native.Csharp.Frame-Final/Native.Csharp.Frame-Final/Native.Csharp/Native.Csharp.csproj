@@ -101,6 +101,7 @@
     <Compile Include="App\Actors\FileIOActor.cs" />
     <Compile Include="App\Actors\ItemParser.cs" />
     <Compile Include="App\Actors\ModeActor.cs" />
+    <Compile Include="App\Actors\RacehorseActor.cs" />
     <Compile Include="App\Actors\TranslateActor.cs" />
     <Compile Include="App\Actors\WeatherActor.cs" />
     <Compile Include="App\Actors\WebConnectActor.cs" />

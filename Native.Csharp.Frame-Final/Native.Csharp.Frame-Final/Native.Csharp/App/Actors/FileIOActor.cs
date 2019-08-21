@@ -98,8 +98,41 @@ namespace Native.Csharp.App.Actors
             return res;
         }
 
+        public static void writeLines(string fileName, ICollection<string> lines)
+        {
+            try
+            {
+                File.WriteAllLines(fileName, lines);
+            }
+            catch (Exception e)
+            {
+                log(e.Message + "\r\n" + e.StackTrace);
+            }
+        }
+        
+        public static void clearFile(string fileName)
+        {
+            try
+            {
+                File.WriteAllText(fileName, "");
+            }
+            catch (Exception e)
+            {
+                log(e.Message + "\r\n" + e.StackTrace);
+            }
+        }
 
-
+        public static void appendLine(string fileName, string line)
+        {
+            try
+            {
+                File.AppendAllText(fileName, line + "\r\n", Encoding.UTF8);
+            }
+            catch (Exception e)
+            {
+                log(e.Message + "\r\n" + e.StackTrace);
+            }
+        }
 
     }
 }

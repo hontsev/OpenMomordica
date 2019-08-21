@@ -95,7 +95,7 @@ namespace Native.Csharp.App.Actors
             try
             {
                 Regex reg = new Regex(@"tkk:'(?<key>.*?)',");
-                Match match = reg.Match(tkkHtml);
+                var match = reg.Match(tkkHtml);
                 tempStr = match.Groups["key"].Value;
             }
             catch (Exception ex)

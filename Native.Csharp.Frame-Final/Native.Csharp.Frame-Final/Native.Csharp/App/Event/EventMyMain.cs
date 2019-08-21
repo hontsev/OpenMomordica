@@ -42,6 +42,7 @@ namespace Native.Csharp.App.Event
         string DataWeatherPath = "\\DataWeather\\";
         string DataModePath = "\\DataMode\\";
         string DataBilibiliPath = "\\DataBilibili\\";
+        string DataRacehorsePath = "\\DataRacehorse\\";
 
         bool inited = false;
         object dealmsgMutex = new object();
@@ -61,6 +62,7 @@ namespace Native.Csharp.App.Event
         TranslateActor trans = new TranslateActor();
         BilibiliLiveActor bilibili = new BilibiliLiveActor();
         ModeActor modes = new ModeActor();
+        RacehorseActor racehorse = new RacehorseActor();
 
         static MomordicaMain()
         {
@@ -94,6 +96,7 @@ namespace Native.Csharp.App.Event
                         proof.init(rootDict + DataProofPath);
                         weather.init(rootDict + DataWeatherPath);
                         bilibili.init(rootDict + DataBilibiliPath);
+                        racehorse.init(sendGroup, rootDict + DataRacehorsePath);
 
                         userBlacklist = new Dictionary<long, long>();
                         groupBlacklist = new Dictionary<long, long>();
@@ -335,14 +338,89 @@ namespace Native.Csharp.App.Event
                 return true;
             }
 
-            // 知识图谱功能
-            var kganswer = baidu.getKGAnswer(msg);
-            if (kganswer.Length > 0)
+            // 赛马
+            if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
             {
-                kganswer = kganswer + modes.getMotionString();
-                if (isGroup) sendGroup(group, user, kganswer);
-                else sendPrivate(user, kganswer);
+                sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
                 return true;
+                //sendGroup(group, user, "苦瓜赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他查询指令包括“个人信息”“富豪榜”“胜率榜”");
+                //return true;
+                //racehorse.addMoney(group, user, 1);
+                //string res = "好";
+                //if (isGroup) sendGroup(group, user, res);
+                //else sendPrivate(user, res);
+                //return true;
+            }
+            if (isGroup && msg == "签到")
+            {
+                sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+                return true;
+                int getMoney = modes.rand.Next(1, 100);
+                racehorse.addMoney(group, user, 1);
+                string res = "";
+                if (isGroup) sendGroup(group, user, res);
+                else sendPrivate(user, res);
+                return true;
+            }
+            if (isGroup && msg=="赛马")
+            {
+                sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+                return true;
+                int num = 0;
+                int.TryParse(msg.Replace("赛马", "").Trim(), out num);
+                if (num <= 0) num = 5;
+                racehorse.initMatch(group, num);
+                return true;
+            }
+            if (isGroup && msg=="富豪榜")
+            {
+                sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+                return true;
+                racehorse.showRichest(group);
+                return true;
+            }
+            if (isGroup && msg == "胜率榜")
+            {
+                sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+                return true;
+                racehorse.showBigWinner(group);
+                return true;
+            }
+            if (isGroup && msg == "求求你借我一点钱")
+            {
+                sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+                return true;
+                //racehorse.addMoney(group, user, 1);
+                //string res = "好";
+                //if (isGroup) sendGroup(group, user, res);
+                //else sendPrivate(user, res);
+                //return true;
+            }
+           
+            if (isGroup && msg == "个人信息")
+            {
+                sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+                return true;
+                racehorse.showMyInfo(group, user);
+                return true;
+            }
+            if (isGroup)
+            {
+                var trygetbet = Regex.Match(msg, @"(\d+)号\s*(\d+)");
+                if (trygetbet.Success)
+                {
+                    try
+                    {
+                        int roadnum = int.Parse(trygetbet.Groups[1].ToString());
+                        int money = int.Parse(trygetbet.Groups[2].ToString());
+                        racehorse.addBet(group, user, roadnum, money);
+                        return true;
+                    }
+                    catch
+                    {
+                    }
+                }
+                
             }
 
             return false;
@@ -359,6 +437,14 @@ namespace Native.Csharp.App.Event
         {
             string answer = "";
             string msg = "";
+            // 知识图谱功能
+            var kganswer = baidu.getKGAnswer(question);
+            if (kganswer.Length > 0)
+            {
+                kganswer = kganswer + modes.getMotionString();
+                return kganswer;
+            }
+
             answer = baidu.getZhidaoAnswer(question);
             if (answer.Length > 0)
             {
