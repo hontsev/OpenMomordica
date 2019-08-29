@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Native.Csharp.App.Actors;
 using Native.Csharp.App.EventArgs;
 using Native.Csharp.App.Interface;
 
@@ -22,6 +23,19 @@ namespace Native.Csharp.App.Event
         {
             // 本方法会在酷Q【主线程】中被调用。
             // 无论本应用是否被启用，本方法都会在酷Q退出前执行一次，请在这里执行插件关闭代码。
+
+            RacehorseActor.run = false;
+            if(RacehorseActor.raceLoopThread != null)
+            {
+                try
+                {
+                    RacehorseActor.raceLoopThread.Abort();
+                }
+                catch
+                {
+
+                }
+            }
 
             // 本方法将固定给酷Q返回 0, 返回后酷Q将很快关闭，请不要再通过线程等方式执行其他代码。
         }
