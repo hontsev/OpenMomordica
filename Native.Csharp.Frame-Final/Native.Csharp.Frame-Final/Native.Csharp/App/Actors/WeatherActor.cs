@@ -67,7 +67,8 @@ namespace Native.Csharp.App.Actors
             {
                 return "";
             }
-            string resstr = WebConnectActor.getData($"https://www.tianqiapi.com/api/?version={version}&cityid={cityid}", Encoding.UTF8);
+            string resstr = WebConnectActor.getData($"https://www.tianqiapi.com/api/?version={version}&cityid={cityid}&appid=1001&appsecret=5566", Encoding.UTF8);
+            //FileIOActor.log("getweather 2 " + resstr);
             JObject o = JObject.Parse(resstr);
             if(o["cityid"].ToString() != cityid)
             {
