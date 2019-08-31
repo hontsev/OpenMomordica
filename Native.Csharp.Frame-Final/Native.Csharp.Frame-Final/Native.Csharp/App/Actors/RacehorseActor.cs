@@ -182,6 +182,10 @@ namespace Native.Csharp.App.Actors
             {
                 return $"一分钱都没有，下你🐎的注呢？";
             }
+            if(bets[_user].Keys.Count>= 2 && !bets[_user].ContainsKey(_roadnum))
+            {
+                return $"最多押两匹，你已经下了{string.Join("、", bets[_user].Keys)}。";
+            }
             string res = "";
             if (_money >= _user.money)
             {
@@ -547,7 +551,7 @@ namespace Native.Csharp.App.Actors
 
         public void addBet(long group, long user, int roadnum, int money)
         {
-            if (!matchinfo.ContainsKey(group)) matchinfo[group] = new MatchInfo();
+            if (!matchinfo.ContainsKey(group)) return;// matchinfo[group] = new MatchInfo();
             if (!userinfo.ContainsKey(user)) userinfo[user] = new UserInfo(user, 10, 0, 0, new DateTime(2019,1,1));
             string res = matchinfo[group].bet(userinfo[user], roadnum, money);
             if (!string.IsNullOrWhiteSpace(res)) showScene(group, user, res);
