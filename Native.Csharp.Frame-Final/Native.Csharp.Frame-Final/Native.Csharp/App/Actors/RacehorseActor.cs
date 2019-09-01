@@ -608,7 +608,7 @@ namespace Native.Csharp.App.Actors
         {
             if (!userinfo.ContainsKey(user)) userinfo[user] = new UserInfo(user, 10, 0, 0, new DateTime(2019, 1, 1));
             var u = userinfo[user];
-            if(u.timestamp.Day<DateTime.Now.Day)
+            if(u.timestamp.Day<DateTime.Now.Day || u.timestamp.Month < DateTime.Now.Month || u.timestamp.Year < DateTime.Now.Year)
             {
                 // success
                 u.timestamp = DateTime.Now;
