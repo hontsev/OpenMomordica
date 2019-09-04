@@ -55,6 +55,8 @@ namespace Native.Csharp.App.Actors
 
         }
 
+        string appcode = "70fba3150023486c984b213b296531ce";
+
         public string getWeather(string city, string daystr="今天")
         {
             string version = "v1";
@@ -67,39 +69,44 @@ namespace Native.Csharp.App.Actors
             {
                 return "";
             }
-            string resstr = WebConnectActor.getData($"https://www.tianqiapi.com/api/?version={version}&cityid={cityid}&appid=1001&appsecret=5566", Encoding.UTF8);
-            //FileIOActor.log("getweather 2 " + resstr);
+            string resstr = WebConnectActor.getSecurityData($"https://jisutqybmf.market.alicloudapi.com/weather/query?city={city}", appcode);
+            //string resstr = WebConnectActor.getData($"http://jisutqybmf.market.alicloudapi.com/weather/query?city={city}");
+            //string resstr = WebConnectActor.getData($"https://www.tianqiapi.com/api/?version={version}&cityid={cityid}&appid=1001&appsecret=5566", Encoding.UTF8);
+            FileIOActor.log("getweather ~ " + resstr);
             JObject o = JObject.Parse(resstr);
-            if(o["cityid"].ToString() != cityid)
+            if(o["status"].ToString() != "0")
             {
                 // not found city
                 return "";
             }
             int day = 7;
             WeatherInfo[] infos = new WeatherInfo[7];
-            for(int i = 0; i < day; i++)
+            for (int i = 0; i < day; i++)
             {
                 try
                 {
                     WeatherInfo info = new WeatherInfo();
-                    info.date = DateTime.Parse(o["data"][i]["date"].ToString());
-                    info.mintem = int.Parse(o["data"][i]["tem2"].ToString().Replace("℃",""));
-                    info.maxtem = int.Parse(o["data"][i]["tem1"].ToString().Replace("℃", ""));
-                    info.avetem = int.Parse(o["data"][i]["tem"].ToString().Replace("℃", ""));
-                    info.wea = o["data"][i]["wea"].ToString();
+                    var witem = o["result"]["daily"][i];
+                    //FileIOActor.log(witem.ToString());
+                    info.date = DateTime.Parse(witem["date"].ToString());
+                    info.maxtem = int.Parse(witem["day"]["temphigh"].ToString().Replace("℃",""));
+                    info.mintem = int.Parse(witem["night"]["templow"].ToString().Replace("℃", ""));
+                    //info.avetem = int.Parse(o["result"]["daily"][i]["temp"].ToString().Replace("℃", ""));
+                    info.wea = witem["day"]["weather"].ToString();
                     info.win = new string[2];
-                    info.win[0]= o["data"][i]["win"][0].ToString();
+                    info.win[0]= witem["night"]["winddirect"].ToString();
                     try
                     {
-                        info.win[1] = o["data"][i]["win"][1].ToString();
+                        info.win[1] = witem["day"]["winddirect"].ToString();
                     }
                     catch { }
-                    info.winspeed = o["data"][i]["win_speed"].ToString();
+                    info.winspeed = witem["day"]["windpower"].ToString();
 
                     infos[i] = info;
                 }
                 catch(Exception e)
                 {
+                    FileIOActor.log($"{e.Message}\r\n{e.StackTrace}");
                     //return "*NOTFOUNDCITY*";
                     //return $"{e.Message}\r\n{e.StackTrace}";
                 }
@@ -109,7 +116,7 @@ namespace Native.Csharp.App.Actors
             {
                 return infos[0].getDescription();
             }
-            else if ("明天".Contains(daystr))
+            else if ("明天 明日".Contains(daystr))
             {
                 return infos[1].getDescription();
             }

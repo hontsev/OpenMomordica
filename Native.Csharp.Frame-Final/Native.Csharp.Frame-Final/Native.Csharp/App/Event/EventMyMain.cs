@@ -764,11 +764,16 @@ namespace Native.Csharp.App.Event
 
         private void sendGroup(long group, long user, string msg)
         {
+
             if (user > 0)
             {
-                msg = Common.CqApi.CqCode_At(user) + msg;
+                msg = Common.CqApi.CqCode_At(user) + msg;// Common.CqApi.GetMemberInfo(group, user).Nick + " " + msg;// Common.CqApi.CqCode_At(user) + msg;
+
             }
-            
+            for (int i = 0; i < 50; i++)    // 33
+            {
+               // msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
+            }
             Common.CqApi.SendGroupMessage(group, msg);
         }
 

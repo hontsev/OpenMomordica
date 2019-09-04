@@ -145,34 +145,6 @@ namespace Native.Csharp.App.Actors
             return request.GetResponse() as HttpWebResponse;
         }
 
-        /// <summary>
-        /// 使用webclient下载文件
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="cookie"></param>
-        /// <param name="savepath"></param>
-        //public static void saveFile(string url, string cookie, string savepath)
-        //{
-        //    //string imgPath = getPath(textBox4.Text) + imgname + ".jpg";
-        //    WebClient client = new WebClient();
-        //    client.Headers.Add("Cookie", cookie);
-        //    try
-        //    {
-        //        byte[] bytes = client.DownloadData(url);
-        //        using (MemoryStream ms = new MemoryStream(bytes))
-        //        {
-        //            Image image = System.Drawing.Image.FromStream(ms);
-        //            image.Save(savepath);
-        //            //this.pictureBox1.Image = image;
-        //        }
-        //    }
-        //    catch
-        //    {
-        //        return;
-        //    }
-
-        //}
-
 
         public static string UrlEncode(string str)
         {
@@ -192,6 +164,40 @@ namespace Native.Csharp.App.Actors
             string res = getData(url, Encoding.UTF8);
             return res;
         }
+
+
+
+        public static string getSecurityData(string url, string appcode, bool isPost = false)
+        {
+            String bodys = "";
+            HttpWebRequest httpRequest = null;
+            HttpWebResponse httpResponse = null;
+            ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(CheckValidationResult);
+            httpRequest = (HttpWebRequest)WebRequest.CreateDefault(new Uri(url));
+            httpRequest.Method = isPost?"POST":"GET";
+            httpRequest.Headers.Add("Authorization", "APPCODE " + appcode);
+            if (0 < bodys.Length)
+            {
+                byte[] data = Encoding.UTF8.GetBytes(bodys);
+                using (Stream stream = httpRequest.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
+            }
+            try
+            {
+                httpResponse = (HttpWebResponse)httpRequest.GetResponse();
+            }
+            catch (WebException ex)
+            {
+                httpResponse = (HttpWebResponse)ex.Response;
+            }
+            Stream st = httpResponse.GetResponseStream();
+            StreamReader reader = new StreamReader(st, Encoding.GetEncoding("utf-8"));
+
+            return reader.ReadToEnd();
+        }
+
 
         /// <summary>
         /// 用httpWebRequest方式访问一个url，获取页面内容
