@@ -31,6 +31,8 @@ namespace Native.Csharp.App.Event
 
         public long myQQ;                // bot的qq
         public long masterQQ;           // 主人的qq，可能响应特殊指令，并私发一些调试消息
+        public long testGroup;        //  测试用群，会拥有一些调试用的权限
+        public bool useGroupMsgBuf = false;        // 如果bot的qq号被腾讯限制群聊，可以尝试用这个模式突破之
 
         public string rootDict;         // 资源根目录
         string asknameFile = "askname.txt";
@@ -55,6 +57,7 @@ namespace Native.Csharp.App.Event
         Dictionary<long, long> groupBlacklist = new Dictionary<long, long>();
         Dictionary<long, long> groupWhitelist = new Dictionary<long, long>();
         List<string> askname = new List<string>();
+        Dictionary<string, string> configs = new Dictionary<string, string>();
 
         
         BaiduSearchActor baidu = new BaiduSearchActor();
@@ -121,6 +124,18 @@ namespace Native.Csharp.App.Event
                         }
                         askname = FileIOActor.readLines(rootDict + asknameFile).ToList();
                         inited = true;
+                        List<string> configlines = FileIOActor.readLines(rootDict + configFile).ToList();
+                        foreach(var line in configlines)
+                        {
+                            var item = line.Split(new char[] { '=' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (item.Length >= 2)
+                            {
+                                configs[item[0]] = item[1];
+                            }
+                        }
+                        if (configs.ContainsKey("master")) masterQQ = long.Parse(configs["master"]);
+                        if (configs.ContainsKey("testgroup")) testGroup = long.Parse(configs["testgroup"]);
+                        if (configs.ContainsKey("groupmsgbuff")) useGroupMsgBuf = configs["groupmsgbuff"] == "1" ? true : false;
                     }
                     catch (Exception e)
                     {
@@ -343,7 +358,7 @@ namespace Native.Csharp.App.Event
             // 赛马
             if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
             {
-                sendGroup(group, user, "苦瓜赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他查询指令包括“个人信息”“富豪榜”“胜率榜”");
+                sendGroup(group, user, "苦瓜赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“个人信息”“富豪榜”“胜率榜”");
                 return true;
              }
             if (isGroup && msg == "签到")
@@ -359,17 +374,16 @@ namespace Native.Csharp.App.Event
             }
             if (isGroup && (msg == "赛马" || msg== "賽馬"))
             {
-                if (racehorse.isAllow(group))
+                if (group==testGroup || racehorse.isAllow(group))
                 {
                     int num = 5;
                     racehorse.initMatch(group, num);
-                    return true;
                 }
                 else
                 {
-                    return true;
                     //sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
                 }
+                return true;
             }
             if (isGroup && (msg == "富豪榜" || msg =="富人榜"))
             {
@@ -390,16 +404,6 @@ namespace Native.Csharp.App.Event
             {
                 racehorse.showBigLoser(group);
                 return true;
-            }
-            if (isGroup && msg == "求求你借我一点钱")
-            {
-                sendGroup(group, user, "滚");
-                return true;
-                //racehorse.addMoney(group, user, 1);
-                //string res = "好";
-                //if (isGroup) sendGroup(group, user, res);
-                //else sendPrivate(user, res);
-                //return true;
             }
            
             if (isGroup && msg == "个人信息")
@@ -731,7 +735,6 @@ namespace Native.Csharp.App.Event
                 {
                     mmdk = MomordicaMain.getMomordicaMain();
                     mmdk.myQQ = Common.CqApi.GetLoginQQ();
-                    mmdk.masterQQ = 287859992;
                     mmdk.rootDict = Common.AppDirectory;
                     mmdk.log = log;
                     mmdk.sendGroup = sendGroup;
@@ -770,10 +773,15 @@ namespace Native.Csharp.App.Event
                 msg = Common.CqApi.CqCode_At(user) + msg;// Common.CqApi.GetMemberInfo(group, user).Nick + " " + msg;// Common.CqApi.CqCode_At(user) + msg;
 
             }
-            for (int i = 0; i < 55; i++)    // 33
+            if (mmdk.useGroupMsgBuf)
             {
-                msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
+                msg = "\r\n" + msg;
+                for (int i = 0; i < 54; i++)    // 33
+                {
+                    msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
+                }
             }
+
             Common.CqApi.SendGroupMessage(group, msg);
         }
 

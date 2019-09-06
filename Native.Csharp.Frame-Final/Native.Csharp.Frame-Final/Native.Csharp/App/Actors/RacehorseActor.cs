@@ -595,11 +595,6 @@ namespace Native.Csharp.App.Actors
                 return true;
             }
 
-            if (group == 884550792)
-            {
-                return true;
-            }
-
             showScene(group, -1, $"夜间赛事起止时间为{nightRaceBegin.ToString("HH:mm")}-{nightRaceEnd.ToString("HH:mm")}");
             return false;
         }
