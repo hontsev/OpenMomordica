@@ -595,7 +595,7 @@ namespace Native.Csharp.App.Actors
                 return true;
             }
 
-            if (group == 318224623)
+            if (group == 884550792)
             {
                 return true;
             }

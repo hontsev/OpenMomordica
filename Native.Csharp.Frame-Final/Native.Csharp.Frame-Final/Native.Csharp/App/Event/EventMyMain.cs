@@ -357,11 +357,11 @@ namespace Native.Csharp.App.Event
                 return true;
                 //racehorse.dailyAttendance(group, user);
             }
-            if (isGroup && msg == "赛马")
+            if (isGroup && (msg == "赛马" || msg== "賽馬"))
             {
                 if (racehorse.isAllow(group))
                 {
-                    int num = 7;
+                    int num = 5;
                     racehorse.initMatch(group, num);
                     return true;
                 }
@@ -770,9 +770,9 @@ namespace Native.Csharp.App.Event
                 msg = Common.CqApi.CqCode_At(user) + msg;// Common.CqApi.GetMemberInfo(group, user).Nick + " " + msg;// Common.CqApi.CqCode_At(user) + msg;
 
             }
-            for (int i = 0; i < 50; i++)    // 33
+            for (int i = 0; i < 55; i++)    // 33
             {
-               // msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
+                msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
             }
             Common.CqApi.SendGroupMessage(group, msg);
         }
