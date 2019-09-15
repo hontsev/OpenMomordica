@@ -43,6 +43,11 @@ namespace Native.Csharp.App.Actors
             if (wintime + losetime <= 0) return 0;
             return (double)100 * losetime / (double)(wintime + losetime);
         }
+
+        public int getPlayTime()
+        {
+            return wintime + losetime;
+        }
     }
 
     class HorseInfo
@@ -327,7 +332,7 @@ namespace Native.Csharp.App.Actors
             }
             else
             {
-                double bl = othermoneys * 0.97 / winnermoneys + 1.2;
+                double bl = othermoneys / winnermoneys + 2;
                 foreach (var winner in winners)
                 {
                     int money = (int)(Math.Ceiling(bets[winner][winnerroad] * bl)) + 1;
@@ -607,7 +612,7 @@ namespace Native.Csharp.App.Actors
             {
                 // success
                 u.timestamp = DateTime.Now;
-                int money = rand.Next(10, 100);
+                int money = rand.Next(30, 114);
                 u.money += money;
                 showScene(group, user, $"您今日领取失业补助{money}枚比特币，现在账上一共{u.money}枚");
                 save();
@@ -626,16 +631,28 @@ namespace Native.Csharp.App.Actors
                 if (left.getWinPercent() < right.getWinPercent())
                     return 1;
                 else if (left.getWinPercent() == right.getWinPercent())
-                    return 0;
+                {
+                    if (left.getPlayTime() < right.getPlayTime()) return 1;
+                    else if (left.getPlayTime() > right.getPlayTime()) return -1;
+                    else return 0;
+                }
                 else
                     return -1;
             });
 
             StringBuilder sb = new StringBuilder();
             sb.Append("赛 🐎 胜 率 榜 \r\n");
-            for (int i = 0; i < Math.Min(users.Count, 10); i++)
+            int showtime = 0;
+            int index = 0;
+            while(showtime < 10 && index < users.Count)
             {
-                sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{Math.Round(users[i].getWinPercent(),2)}%({users[i].wintime}/{users[i].wintime+users[i].losetime})\r\n");
+                int playtime = users[index].wintime + users[index].losetime;
+                if(playtime > 5)
+                {
+                    sb.Append($"{showtime + 1}:{getQQNick(users[index].qq)},{Math.Round(users[index].getWinPercent(), 2)}%({users[index].wintime}/{playtime})\r\n");
+                    showtime += 1;
+                }
+                index += 1;
             }
             showScene(group, -1, sb.ToString());
             save();
@@ -648,18 +665,35 @@ namespace Native.Csharp.App.Actors
             {
                 if (left.getLosePercent() < right.getLosePercent())
                     return 1;
-                else if (left.getLosePercent() == right.getLosePercent())
-                    return 0;
+                else if (left.getWinPercent() == right.getWinPercent())
+                {
+                    if (left.getPlayTime() < right.getPlayTime()) return 1;
+                    else if (left.getPlayTime() > right.getPlayTime()) return -1;
+                    else return 0;
+                }
                 else
                     return -1;
             });
 
             StringBuilder sb = new StringBuilder();
             sb.Append("赛 🐎 败 率 榜 \r\n");
-            for (int i = 0; i < Math.Min(users.Count, 10); i++)
+            int showtime = 0;
+            int index = 0;
+            while (showtime < 10 && index < users.Count)
             {
-                sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{Math.Round(users[i].getLosePercent(), 2)}%({users[i].losetime}/{users[i].wintime + users[i].losetime})\r\n");
+                int playtime = users[index].wintime + users[index].losetime;
+                if (playtime > 5)
+                {
+                    sb.Append($"{showtime + 1}:{getQQNick(users[index].qq)},{Math.Round(users[index].getLosePercent(), 2)}%({users[index].losetime}/{playtime})\r\n");
+                    showtime += 1;
+                }
+                index += 1;
             }
+
+            //for (int i = 0; i < Math.Min(users.Count, 10); i++)
+            //{
+            //    sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{Math.Round(users[i].getLosePercent(), 2)}%({users[i].losetime}/{users[i].wintime + users[i].losetime})\r\n");
+            //}
             showScene(group, -1, sb.ToString());
             save();
         }
@@ -706,6 +740,29 @@ namespace Native.Csharp.App.Actors
             for (int i = 0; i < Math.Min(users.Count, 10); i++)
             {
                 sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{users[i].money}枚\r\n");
+            }
+            showScene(group, -1, sb.ToString());
+            save();
+        }
+
+        public void showMostPlayTime(long group)
+        {
+            var users = userinfo.Values.ToList();
+            users.Sort((left, right) =>
+            {
+                if (left.getPlayTime()  < right.getPlayTime())
+                    return 1;
+                else if (left.getPlayTime() == right.getPlayTime())
+                    return 0;
+                else
+                    return -1;
+            });
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append("赛 🐎 赌 狗 榜 \r\n");
+            for (int i = 0; i < Math.Min(users.Count, 10); i++)
+            {
+                sb.Append($"{i + 1}:{getQQNick(users[i].qq)},赌了{users[i].wintime + users[i].losetime}次\r\n");
             }
             showScene(group, -1, sb.ToString());
             save();

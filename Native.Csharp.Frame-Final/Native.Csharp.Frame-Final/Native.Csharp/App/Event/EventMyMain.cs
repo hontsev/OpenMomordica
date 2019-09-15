@@ -358,19 +358,13 @@ namespace Native.Csharp.App.Event
             // 赛马
             if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
             {
-                sendGroup(group, user, "苦瓜赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“个人信息”“富豪榜”“胜率榜”");
+                sendGroup(group, user, "苦瓜赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”");
                 return true;
              }
             if (isGroup && msg == "签到")
             {
                 racehorse.dailyAttendance(group, user);
                 return true;
-            }
-            if (isGroup && msg == "学习强国")
-            {
-                sendGroup(group, user, "*敬请期待*");
-                return true;
-                //racehorse.dailyAttendance(group, user);
             }
             if (isGroup && (msg == "赛马" || msg== "賽馬"))
             {
@@ -403,6 +397,11 @@ namespace Native.Csharp.App.Event
             if (isGroup && msg == "败率榜")
             {
                 racehorse.showBigLoser(group);
+                return true;
+            }
+            if(isGroup && msg == "赌狗榜")
+            {
+                racehorse.showMostPlayTime(group);
                 return true;
             }
            
