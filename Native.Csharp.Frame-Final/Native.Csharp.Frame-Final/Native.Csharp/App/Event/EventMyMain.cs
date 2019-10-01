@@ -21,11 +21,13 @@ namespace Native.Csharp.App.Event
         public delegate void sendQQPrivateMsgHandler(long targetUser, string msg);
         public delegate void sendQQGroupMsgHandler(long group, long targetUser, string msg);
         public delegate string getQQNickHandler(long qq);
+        public delegate long getQQGroupNumber();
 
         public sendStringHandler log;
         public sendQQPrivateMsgHandler sendPrivate;
         public sendQQGroupMsgHandler sendGroup;
         public getQQNickHandler getQQNick;
+        public getQQGroupNumber getQQGroupNum;
 
         private static MomordicaMain _mmdk;
 
@@ -47,6 +49,11 @@ namespace Native.Csharp.App.Event
         string DataModePath = "\\DataMode\\";
         string DataBilibiliPath = "\\DataBilibili\\";
         string DataRacehorsePath = "\\DataRacehorse\\";
+
+        DateTime startTime = DateTime.Now;
+        long playTimePrivate = 0;
+        long playTimeGroup = 0;
+        //long errTime = 0;
 
         bool inited = false;
         object dealmsgMutex = new object();
@@ -242,10 +249,63 @@ namespace Native.Csharp.App.Event
             }
 
             // 功能介绍
-            if (msg == "功能" || msg == "设置" || msg == "帮助" || msg == "设定")
+            if (new string[] { "功能","选项","设置","帮助","配置","设定","菜单"}.Contains(msg))
             {
                 if (isGroup) sendGroup(group, -1, getWelcomeString());
                 else sendPrivate(user, getWelcomeString());
+                return true;
+            }
+
+            if (msg == "状态" )
+            {
+                string rmsg = "";
+                rmsg += "亲父QQ：" + (masterQQ) + "\r\n";
+                rmsg += "启动时间：" + startTime.ToString("yyyy-MM-dd HH:mm:ss") + " (已运行" + (DateTime.Now - startTime).TotalDays.ToString("0.00") + "天)\r\n";
+                rmsg += "拳交马化腾：" + (useGroupMsgBuf ? "开启" : "关闭") + "\r\n";
+                rmsg += "赛马时段：" + racehorse.raceBegin.ToString()+"~"+racehorse.raceEnd.ToString()+ "\r\n";
+                rmsg += "加了" + getQQGroupNum() + "个群\r\n";
+                rmsg += "在群里被乐" + playTimeGroup + "次\r\n";
+                rmsg += "在私聊被乐" + playTimePrivate + "次\r\n";
+                if(isGroup) rmsg += "在本群是" + modes.getGroupMode(group) + "模式\r\n";
+                else rmsg += "目前处于" + modes.getUserMode(user) + "模式\r\n";
+
+                if (isGroup) sendGroup(group, -1, rmsg);
+                else sendPrivate(user, rmsg);
+                return true;
+            }
+
+            if (msg == "拳交on")
+            {
+                string rmsg = "";
+                if (useGroupMsgBuf == false)
+                {
+                    useGroupMsgBuf = true;
+                    rmsg = "好，苦瓜开始拳交马化腾";
+                }
+                else
+                {
+                    rmsg = "现在正在拳交啊";
+                }
+
+                if (isGroup) sendGroup(group, -1, rmsg);
+                else sendPrivate(user, rmsg);
+                return true;
+            }
+            else if (msg == "拳交off")
+            {
+                string rmsg = "";
+                if (useGroupMsgBuf == true)
+                {
+                    useGroupMsgBuf = false;
+                    rmsg = "好，苦瓜不再拳交马化腾";
+                }
+                else
+                {
+                    rmsg = "俺也没拳交啊";
+                }
+
+                if (isGroup) sendGroup(group, -1, rmsg);
+                else sendPrivate(user, rmsg);
                 return true;
             }
 
@@ -554,7 +614,12 @@ namespace Native.Csharp.App.Event
             saveMsg(group, user, question.Trim());
             if (!askme(ref question)) return;
             if (!allowuser(user)) return;
-            if (dealCmd(group, user, question)) return;
+            if (dealCmd(group, user, question))
+            {
+                playTimeGroup += 1;
+                return;
+            }
+            playTimeGroup += 1;
 
             string msg = "";
             string modeName = modes.getGroupMode(group);
@@ -584,7 +649,12 @@ namespace Native.Csharp.App.Event
             {
                 // Common.CqApi.SendPrivateMessage(user, "[CQ: rich, url = https://i.y.qq.com/v8/playsong.html?songid=201243685&amp;source=yqq#wechat_redirect,text=来自QQ音乐的分享 《Lightbreaker》]");
             }
-            if (dealCmd(0, user, question)) return;
+            if (dealCmd(0, user, question))
+            {
+                playTimePrivate += 1;
+                return;
+            }
+            playTimePrivate += 1;
 
             string msg = "";
             string modeName = modes.getUserMode(user);
@@ -711,12 +781,13 @@ namespace Native.Csharp.App.Event
     }
 
 
-    class EventMyMain : 
-        IReceiveGroupMessage, 
-        IReceiveFriendMessage, 
-        IReceiveFriendAddRequest, 
+    class EventMyMain :
+        IReceiveGroupMessage,
+        IReceiveFriendMessage,
+        IReceiveFriendAddRequest,
         IReceiveAddGroupBeInvitee,
-        IReceiveFriendIncrease
+        IReceiveFriendIncrease,
+        IReceiveGroupPrivateMessage
     {
         MomordicaMain mmdk;
 
@@ -730,7 +801,7 @@ namespace Native.Csharp.App.Event
         {
             try
             {
-                if(mmdk==null)
+                if (mmdk == null)
                 {
                     mmdk = MomordicaMain.getMomordicaMain();
                     mmdk.myQQ = Common.CqApi.GetLoginQQ();
@@ -739,10 +810,11 @@ namespace Native.Csharp.App.Event
                     mmdk.sendGroup = sendGroup;
                     mmdk.sendPrivate = sendPrivate;
                     mmdk.getQQNick = getQQNick;
+                    mmdk.getQQGroupNum = getQQGroupNum;
                     mmdk.tryInit();
-                    
+
                 }
-                
+
             }
             catch { }
         }
@@ -756,11 +828,23 @@ namespace Native.Csharp.App.Event
         {
             try
             {
-               return Common.CqApi.GetQQInfo(qq).Nick;
+                return Common.CqApi.GetQQInfo(qq).Nick;
             }
             catch (Exception e)
             {
                 return qq.ToString();
+            }
+        }
+
+        private long getQQGroupNum()
+        {
+            try
+            {
+                return Common.CqApi.GetGroupList().Count;
+            }
+            catch (Exception e)
+            {
+                return 0;
             }
         }
 
@@ -824,6 +908,19 @@ namespace Native.Csharp.App.Event
         public void ReceiveFriendIncrease(object sender, CqFriendIncreaseEventArgs e)
         {
             //sendPrivate(e.FromQQ, mmdk.getWelcomeString());
+        }
+
+        public void ReceiveGroupPrivateMessage(object sender, CqPrivateMessageEventArgs e)
+        {
+            tryInit();
+            try
+            {
+                mmdk.dealPrivateMsg(e.FromQQ, e.Message);
+            }
+            catch (Exception ex)
+            {
+                sendPrivate(mmdk.masterQQ, ex.Message + "\r\n" + ex.StackTrace);
+            }
         }
     }
 }

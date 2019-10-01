@@ -16,6 +16,7 @@ namespace Native.Csharp.App.Actors
         public int losetime;
         public DateTime timestamp;
 
+
         public UserInfo(long _qq, int _money, int _wintime, int _losetime, DateTime _timestamp)
         {
             qq = _qq;
@@ -429,6 +430,9 @@ namespace Native.Csharp.App.Actors
         public Dictionary<string, HorseInfo> horseinfo = new Dictionary<string, HorseInfo>();
         public Dictionary<long , MatchInfo> matchinfo = new Dictionary<long, MatchInfo>();
 
+        public TimeSpan raceBegin = new TimeSpan(21, 0, 0);
+        public TimeSpan raceEnd = new TimeSpan(23, 0, 0);
+
         public RacehorseActor()
         {
         }
@@ -438,14 +442,15 @@ namespace Native.Csharp.App.Actors
             int sleepTime = 1000;
             while(run)
             {
-                var matchs = matchinfo.Values;
-                foreach (var match in matchs)
+                var matchs = matchinfo.Values.ToList();
+                for(int i = 0; i < matchs.Count; i++)
                 {
+                    var match = matchs[i];
                     try
                     {
                         match.run();
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
                     }
@@ -589,11 +594,12 @@ namespace Native.Csharp.App.Actors
 
         #endregion
 
+
         public bool isAllow(long group)
         {
             DateTime time = DateTime.Now;
-            DateTime nightRaceBegin = new DateTime(time.Year, time.Month, time.Day, 21, 0, 0);
-            DateTime nightRaceEnd = new DateTime(time.Year, time.Month, time.Day, 23, 0, 0);
+            DateTime nightRaceBegin = new DateTime(time.Year, time.Month, time.Day) + raceBegin;
+            DateTime nightRaceEnd = new DateTime(time.Year, time.Month, time.Day) + raceEnd;
 
             if (time >= nightRaceBegin && time <= nightRaceEnd)
             {

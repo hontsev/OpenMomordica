@@ -39,6 +39,7 @@ namespace Native.Csharp.App.Event
 
             container.RegisterType<IReceiveGroupMessage, EventMyMain>("群消息处理");
             container.RegisterType<IReceiveFriendMessage, EventMyMain>("私聊消息处理");
+            container.RegisterType<IReceiveGroupPrivateMessage, EventMyMain>("群私聊消息处理");
             container.RegisterType<IReceiveFriendAddRequest, EventMyMain>("好友添加请求处理");
             container.RegisterType<IReceiveAddGroupBeInvitee, EventMyMain>("群添加请求处理");
             container.RegisterType<IReceiveFriendIncrease, EventMyMain>("好友已添加事件处理");
