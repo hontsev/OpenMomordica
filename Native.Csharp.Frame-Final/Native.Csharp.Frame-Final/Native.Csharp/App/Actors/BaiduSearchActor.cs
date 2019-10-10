@@ -107,7 +107,7 @@ namespace Native.Csharp.App.Actors
             var res1 = getBaiduZhidaoAnswers(str, 5);
             if (res1.Length > 0)
             {
-                int maxlen = 150;
+                int maxlen = 250;
                 int findwidth = 20;
                 var tmp = res1[rand.Next(0, res1.Length)].Replace("展开全部", "").Replace("\r", "").Trim();
                 tmp = ItemParser.StripHTML(tmp);
@@ -255,13 +255,13 @@ namespace Native.Csharp.App.Actors
             catch { }
 
 
-            //翻译
-            try
-            {
-                string trans = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_sp_fanyi_line_two\"]").InnerText);
-                reslist.Add(trans);
-            }
-            catch { }
+            ////翻译
+            //try
+            //{
+            //    string trans = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_sp_fanyi_line_two\"]").InnerText);
+            //    reslist.Add(trans);
+            //}
+            //catch { }
 
             //数学运算
             try
