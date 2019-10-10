@@ -169,6 +169,12 @@ namespace Native.Csharp.App.Event
 
             bool isGroup = (group <= 0) ? false : true;
             msg = msg.Trim();
+            try{
+                while (msg.EndsWith("?")) msg = msg.Substring(0, msg.Length - 1);
+                while (msg.EndsWith("？")) msg = msg.Substring(0, msg.Length - 1);
+            }
+            catch { }
+            
 
             // 模式配置
             if (msg.Contains("模式列表"))
@@ -253,8 +259,16 @@ namespace Native.Csharp.App.Event
                 else sendPrivate(user, rmsg);
                 return true;
             }
+            if(msg=="存档" && user == config.masterQQ)
+            {
+                config.save();
+                string rmsg = "好，苦瓜已存档当前状态数据~";
+                if (isGroup) sendGroup(group, -1, rmsg);
+                else sendPrivate(user, rmsg);
+                return true;
+            }
 
-            if (msg == "拳交on" && user== config.masterQQ)
+            if ((msg == "拳交on"|| msg == "拳交马化腾") && user== config.masterQQ)
             {
                 string rmsg = "";
                 if (config.useGroupMsgBuf == false)
@@ -336,9 +350,10 @@ namespace Native.Csharp.App.Event
             }
 
             // bilibili 功能
-            if (msg == "虚拟区谁在播")
+            if (msg.EndsWith("区谁在播"))
             {
-                string xnq = bilibili.getLiveNum();
+                string areaname = msg.Replace("谁在播", "");
+                string xnq = bilibili.getLiveNum(areaname);
                 if (isGroup) sendGroup(group, user, xnq);
                 else sendPrivate(user, xnq);
                 return true;

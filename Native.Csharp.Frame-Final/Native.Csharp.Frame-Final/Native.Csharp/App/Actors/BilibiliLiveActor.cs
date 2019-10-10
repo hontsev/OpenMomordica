@@ -29,9 +29,11 @@ namespace Native.Csharp.App.Actors
         string path = "";
         string nameDictName = "namedict.txt";
         string roomDictName = "roomdict.txt";
+        string areaDictName = "areadict.txt";
         object searchMutex = new object();
         public Dictionary<string, string> nameDict = new Dictionary<string, string>();
         Dictionary<string, string> roomDict = new Dictionary<string, string>();
+        Dictionary<string, int[]> areas = new Dictionary<string, int[]>();
 
         public BilibiliLiveActor()
         {
@@ -62,13 +64,27 @@ namespace Native.Csharp.App.Actors
                     roomDict[items[0]] = items[1];
                 }
             }
+
+            var lines3 = FileIOActor.readLines(path + areaDictName);
+            areas = new Dictionary<string, int[]>();
+            foreach (var line in lines3)
+            {
+                var items = line.Split('\t');
+                if (items.Length >= 3)
+                {
+                    try
+                    {
+                        areas[items[0]] = new int[] { int.Parse(items[1]), int.Parse(items[2]) };
+                    }
+                    catch { }
+                }
+            }
         }
 
-        public void readRooms()
+        public void readRooms(int parea, int area)
         {
             int page = 1;
             string sort = "online";
-            int area = 199;
             int sum = 0;
             int sumindex = 0;
             try
@@ -76,7 +92,7 @@ namespace Native.Csharp.App.Actors
                 List<LiveInfo> infos = new List<LiveInfo>();
                 do
                 {
-                    string url = $"https://api.live.bilibili.com/room/v3/area/getRoomList?platform=web&parent_area_id=1&cate_id=0&area_id={area}&sort_type={sort}&page={page}&page_size=30&tag_version=1";
+                    string url = $"https://api.live.bilibili.com/room/v3/area/getRoomList?platform=web&parent_area_id={parea}&cate_id=0&area_id={area}&sort_type={sort}&page={page}&page_size=30&tag_version=1";
                     string resstr = WebConnectActor.getData(url, Encoding.UTF8);
                     JObject jo = JObject.Parse(resstr);
                     sum = int.Parse(jo["data"]["count"].ToString());
@@ -104,7 +120,7 @@ namespace Native.Csharp.App.Actors
                     try {
                         foreach (var info in infos)
                         {
-                            roomDict[info.uname] = info.roomid.ToString();
+                            if(!roomDict.ContainsKey(info.uname)) roomDict[info.uname] = info.roomid.ToString();
                         }
                         //if (File.Exists(path + roomDictName)) File.Delete(path + roomDictName);
                         List<string> res = new List<string>();
@@ -258,7 +274,7 @@ namespace Native.Csharp.App.Actors
 
         public string getLiveInfo(string username)
         {
-            readRooms();
+            //readRooms();
             int findmaxtime = 15;
             while (nameDict.ContainsKey(username) && findmaxtime-- >=0) username = nameDict[username];
             //FileIOActor.log(username + " <- name");
@@ -271,17 +287,25 @@ namespace Native.Csharp.App.Actors
             }
             else
             {
-                return $"没在虚拟区找到{username}的直播，他大概没开播8";
+                return $"没找到{username}的直播，他大概没开播8";
             }
         }
 
-        public string getLiveNum()
+
+
+        public string getLiveNum(string areaName)
         {
-            readRooms();
             int page = 1;
             string sort = "online";
-            int area = 199;
-            string url = $"https://api.live.bilibili.com/room/v3/area/getRoomList?platform=web&parent_area_id=1&cate_id=0&area_id={area}&sort_type={sort}&page={page}&page_size=30&tag_version=1";
+
+            if (!areas.ContainsKey(areaName))
+            {
+                return $"好像没在b站找到这个分区：" + areaName;
+            }
+            int parea = areas[areaName][0];
+            int area = areas[areaName][1];
+            readRooms(parea,area);
+            string url = $"https://api.live.bilibili.com/room/v3/area/getRoomList?platform=web&parent_area_id={parea}&cate_id=0&area_id={area}&sort_type={sort}&page={page}&page_size=30&tag_version=1";
 
             string resstr = WebConnectActor.getData(url, Encoding.UTF8);
             JObject jo = JObject.Parse(resstr);
@@ -306,7 +330,7 @@ namespace Native.Csharp.App.Actors
                 }
                 StringBuilder sb = new StringBuilder();
 
-                sb.Append($"虚拟主播区还有{sum}个人播，");
+                sb.Append($"{areaName}还有{sum}个人播，");
                 if (sum > 0)
                 {
                     sb.Append($"第一是{infos[0].uname}，{infos[0].online}人气，在播{infos[0].title}");

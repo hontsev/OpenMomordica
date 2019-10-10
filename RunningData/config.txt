@@ -1,0 +1,8 @@
+master=287859992
+testgroup=884550792
+groupmsgbuff=0
+starttime=2019-10-02 00:29:05
+startnum=3
+playtimeprivate=59
+playtimegroup=1143
+errtime=0

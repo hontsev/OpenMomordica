@@ -109,7 +109,19 @@ namespace Native.Csharp.App.Actors
                 log(e.Message + "\r\n" + e.StackTrace);
             }
         }
-        
+
+        public static void write(string fileName, string data)
+        {
+            try
+            {
+                File.WriteAllText(fileName, data);
+            }
+            catch (Exception e)
+            {
+                log(e.Message + "\r\n" + e.StackTrace);
+            }
+        }
+
         public static void clearFile(string fileName)
         {
             try
