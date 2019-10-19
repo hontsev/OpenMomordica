@@ -8,29 +8,24 @@ using static Native.Csharp.App.Event.MomordicaMain;
 
 namespace Native.Csharp.App.Actors
 {
-    class UserInfo
+    class RHUserInfo
     {
-        public long qq;
-        public int money;
+        public BTCUser user;
+        public int hrmoney;
         public int wintime;
         public int losetime;
-        public DateTime timestamp;
 
-
-        public UserInfo(long _qq, int _money, int _wintime, int _losetime, DateTime _timestamp)
+        public RHUserInfo(BTCUser _user, int _hrmoney, int _wintime, int _losetime)
         {
-            qq = _qq;
-            money = _money;
+            user = _user;
+            hrmoney = _hrmoney;
             wintime = _wintime;
             losetime = _losetime;
-            timestamp = _timestamp;
         }
-
-
-
+               
         public override string ToString()
         {
-            return $"{qq}\t{money}\t{wintime}\t{losetime}\t{RacehorseActor.toTimestamp(timestamp)}";
+            return $"{user.qq}\t{hrmoney}\t{wintime}\t{losetime}";
         }
 
         public double getWinPercent()
@@ -120,7 +115,7 @@ namespace Native.Csharp.App.Actors
         getQQNickHandler getQQNick;
         public sendQQGroupMsgHandler showScene;
 
-        public Dictionary<UserInfo, Dictionary<int, int>> bets = new Dictionary<UserInfo, Dictionary<int, int>>();
+        public Dictionary<RHUserInfo, Dictionary<int, int>> bets = new Dictionary<RHUserInfo, Dictionary<int, int>>();
         public Dictionary<int, Road> roads = new Dictionary<int, Road>();
 
         public long id;  //用qq群号作为比赛唯一标识，避免同一个群同时多局
@@ -173,7 +168,7 @@ namespace Native.Csharp.App.Actors
             }
         }
 
-        public string bet(UserInfo _user, int _roadnum, int _money)
+        public string bet(RHUserInfo _user, int _roadnum, int _money)
         {
             if (status != 1) return "";
             if (!bets.ContainsKey(_user))
@@ -184,7 +179,7 @@ namespace Native.Csharp.App.Actors
             {
                 return $"在？没有第{_roadnum}条赛道";
             }
-            if (_user.money <= 0)
+            if ( _user.user.money <= 0)
             {
                 return $"一分钱都没有，下你🐎的注呢？";
             }
@@ -193,22 +188,23 @@ namespace Native.Csharp.App.Actors
                 return $"最多押两匹，你已经下了{string.Join("、", bets[_user].Keys)}。";
             }
             string res = "";
-            if (_money >= _user.money)
+            if (_money >= _user.user.money)
             {
-                res = $"all in!把手上的{_user.money}枚比特币都押了{_roadnum}号马";
-                _money = _user.money;
-                _user.money = 0;
+                res = $"all in!把手上的{_user.user.money}枚比特币都押了{_roadnum}号马";
+                _money = _user.user.money;
+                _user.user.money = 0;
             }
             else
             {
-                _user.money -= _money;
-                res = $"成功在{_roadnum}号马下注{_money}枚比特币，账户余额{_user.money}";
+                _user.user.money -= _money;
+                res = $"成功在{_roadnum}号马下注{_money}枚比特币，账户余额{_user.user.money}";
 
             }
             if (!bets[_user].ContainsKey(_roadnum))
             {
                 bets[_user][_roadnum] = 0;
             }
+            _user.hrmoney += _money;
             bets[_user][_roadnum] += _money;
             
             return res;
@@ -302,7 +298,7 @@ namespace Native.Csharp.App.Actors
 
             int allmoney = 0;
             foreach (var bet in bets.Values) foreach (var money in bet.Values) allmoney += money;
-            List<UserInfo> winners = new List<UserInfo>();
+            List<RHUserInfo> winners = new List<RHUserInfo>();
             double pl = RacehorseActor.rand.Next(1000, 6666);
             int othermoneys = 0;
             int winnermoneys = 0;
@@ -337,8 +333,8 @@ namespace Native.Csharp.App.Actors
                 foreach (var winner in winners)
                 {
                     int money = (int)(Math.Ceiling(bets[winner][winnerroad] * bl)) + 1;
-                    winner.money += money;
-                    sb.Append($"{getQQNick(winner.qq)}赢了{money}枚比特币！恭喜\r\n");
+                    winner.user.money += money;
+                    sb.Append($"{getQQNick(winner.user.qq)}赢了{money}枚比特币！恭喜\r\n");
                     winner.wintime += 1;
                 }
             }
@@ -412,9 +408,9 @@ namespace Native.Csharp.App.Actors
 
     }
 
-    class RacehorseActor
+    class RacehorseActor 
     {
-        public sendQQGroupMsgHandler showScene;
+        public sendQQGroupMsgHandler outputMessage;
         public getQQNickHandler getQQNick;
 
         string userinfoFile = "userinfo.txt";
@@ -423,15 +419,17 @@ namespace Native.Csharp.App.Actors
         string path = "";
         public static Random rand = new Random();
         object matchMutex = new object();
-        public static Thread raceLoopThread ;
+        public static Thread raceLoopThread;
         public static bool run = false;
+        public BTCActor btc;
 
-        public Dictionary<long, UserInfo> userinfo = new Dictionary<long, UserInfo>();
+        public Dictionary<long, RHUserInfo> ruuserinfo = new Dictionary<long, RHUserInfo>();
         public Dictionary<string, HorseInfo> horseinfo = new Dictionary<string, HorseInfo>();
         public Dictionary<long , MatchInfo> matchinfo = new Dictionary<long, MatchInfo>();
 
         public TimeSpan raceBegin = new TimeSpan(21, 0, 0);
         public TimeSpan raceEnd = new TimeSpan(23, 0, 0);
+
 
         public RacehorseActor()
         {
@@ -464,11 +462,12 @@ namespace Native.Csharp.App.Actors
             
         }
 
-        public void init(sendQQGroupMsgHandler _showScene, getQQNickHandler _getQQNick,string path)
+        public void init(sendQQGroupMsgHandler _showScene, getQQNickHandler _getQQNick, BTCActor _btc, string _path)
         {
-            showScene = _showScene;
+            outputMessage = _showScene;
             getQQNick = _getQQNick;
-            this.path = path;
+            btc = _btc;
+            path = _path;
             lock (matchMutex)
             {
                 try
@@ -477,14 +476,14 @@ namespace Native.Csharp.App.Actors
                     foreach (var line in lines)
                     {
                         var items = line.Split('\t');
-                        if (items.Length >= 5)
+                        if (items.Length >= 4)
                         {
-                            userinfo[long.Parse(items[0])] = new UserInfo(
-                                long.Parse(items[0]),
+                            BTCUser user = btc.get(items[0]);
+                            ruuserinfo[user.qq] = new RHUserInfo(
+                                user,
                                 int.Parse(items[1]),
                                 int.Parse(items[2]),
-                                int.Parse(items[3]),
-                                toDateTime(items[4])
+                                int.Parse(items[3])
                             );
                         }
                     }
@@ -533,7 +532,7 @@ namespace Native.Csharp.App.Actors
                 try
                 {
                     FileIOActor.clearFile(path + userinfoFile);
-                    foreach (var user in userinfo.Values)
+                    foreach (var user in ruuserinfo.Values)
                     {
                         FileIOActor.appendLine(path + userinfoFile, user.ToString());
                     }
@@ -555,16 +554,16 @@ namespace Native.Csharp.App.Actors
         {
             if (!matchinfo.ContainsKey(group)) matchinfo[group] = new MatchInfo();
             else if (matchinfo[group].status != 0) return;
-            matchinfo[group].begin(group, num, 100, horseinfo.Values.ToList(), showScene, getQQNick);
+            matchinfo[group].begin(group, num, 100, horseinfo.Values.ToList(), outputMessage, getQQNick);
             save();
         }
 
-        public void addBet(long group, long user, int roadnum, int money)
+        public void addBet(long group, long userqq, int roadnum, int money)
         {
             if (!matchinfo.ContainsKey(group)) return;// matchinfo[group] = new MatchInfo();
-            if (!userinfo.ContainsKey(user)) userinfo[user] = new UserInfo(user, 10, 0, 0, new DateTime(2019,1,1));
-            string res = matchinfo[group].bet(userinfo[user], roadnum, money);
-            if (!string.IsNullOrWhiteSpace(res)) showScene(group, user, res);
+            if (!ruuserinfo.ContainsKey(userqq)) ruuserinfo[userqq] = new RHUserInfo(btc.get(userqq), 0, 0, 0);
+            string res = matchinfo[group].bet(ruuserinfo[userqq], roadnum, money);
+            if (!string.IsNullOrWhiteSpace(res)) outputMessage(group, userqq, res);
             save();
         }
 
@@ -606,32 +605,15 @@ namespace Native.Csharp.App.Actors
                 return true;
             }
 
-            showScene(group, -1, $"夜间赛事起止时间为{nightRaceBegin.ToString("HH:mm")}-{nightRaceEnd.ToString("HH:mm")}");
+            outputMessage(group, -1, $"夜间赛事起止时间为{nightRaceBegin.ToString("HH:mm")}-{nightRaceEnd.ToString("HH:mm")}");
             return false;
         }
 
-        public void dailyAttendance(long group, long user)
-        {
-            if (!userinfo.ContainsKey(user)) userinfo[user] = new UserInfo(user, 10, 0, 0, new DateTime(2019, 1, 1));
-            var u = userinfo[user];
-            if(u.timestamp.Day<DateTime.Now.Day || u.timestamp.Month < DateTime.Now.Month || u.timestamp.Year < DateTime.Now.Year)
-            {
-                // success
-                u.timestamp = DateTime.Now;
-                int money = rand.Next(30, 114);
-                u.money += money;
-                showScene(group, user, $"您今日领取失业补助{money}枚比特币，现在账上一共{u.money}枚");
-                save();
-            }
-            else
-            {
-                showScene(group, user, $"在？领过了");
-            }
-        }
+
 
         public void showBigWinner(long group)
         {
-            var users = userinfo.Values.ToList();
+            var users = ruuserinfo.Values.ToList();
             users.Sort((left, right) =>
             {
                 if (left.getWinPercent() < right.getWinPercent())
@@ -655,18 +637,18 @@ namespace Native.Csharp.App.Actors
                 int playtime = users[index].wintime + users[index].losetime;
                 if(playtime > 5)
                 {
-                    sb.Append($"{showtime + 1}:{getQQNick(users[index].qq)},{Math.Round(users[index].getWinPercent(), 2)}%({users[index].wintime}/{playtime})\r\n");
+                    sb.Append($"{showtime + 1}:{getQQNick(users[index].user.qq)},{Math.Round(users[index].getWinPercent(), 2)}%({users[index].wintime}/{playtime})\r\n");
                     showtime += 1;
                 }
                 index += 1;
             }
-            showScene(group, -1, sb.ToString());
-            save();
+            outputMessage(group, -1, sb.ToString());
+            //save();
         }
 
         public void showBigLoser(long group)
         {
-            var users = userinfo.Values.ToList();
+            var users = ruuserinfo.Values.ToList();
             users.Sort((left, right) =>
             {
                 if (left.getLosePercent() < right.getLosePercent())
@@ -690,7 +672,7 @@ namespace Native.Csharp.App.Actors
                 int playtime = users[index].wintime + users[index].losetime;
                 if (playtime > 5)
                 {
-                    sb.Append($"{showtime + 1}:{getQQNick(users[index].qq)},{Math.Round(users[index].getLosePercent(), 2)}%({users[index].losetime}/{playtime})\r\n");
+                    sb.Append($"{showtime + 1}:{getQQNick(users[index].user.qq)},{Math.Round(users[index].getLosePercent(), 2)}%({users[index].losetime}/{playtime})\r\n");
                     showtime += 1;
                 }
                 index += 1;
@@ -700,18 +682,18 @@ namespace Native.Csharp.App.Actors
             //{
             //    sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{Math.Round(users[i].getLosePercent(), 2)}%({users[i].losetime}/{users[i].wintime + users[i].losetime})\r\n");
             //}
-            showScene(group, -1, sb.ToString());
-            save();
+            outputMessage(group, -1, sb.ToString());
+            //save();
         }
 
         public void showRichest(long group)
         {
-            var users = userinfo.Values.ToList();
+            var users = ruuserinfo.Values.ToList();
             users.Sort((left, right) =>
             {
-                if (left.money < right.money)
+                if (left.user.money < right.user.money)
                     return 1;
-                else if (left.money == right.money)
+                else if (left.user.money == right.user.money)
                     return 0;
                 else
                     return -1;
@@ -721,21 +703,21 @@ namespace Native.Csharp.App.Actors
             sb.Append("赛 🐎 富 豪 榜 \r\n");
             for(int i = 0; i < Math.Min(users.Count,10); i++)
             {
-                sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{users[i].money}枚\r\n");
+                sb.Append($"{i + 1}:{getQQNick(users[i].user.qq)},{users[i].user.money}枚\r\n");
             }
-            showScene(group, -1, sb.ToString());
-            save();
+            outputMessage(group, -1, sb.ToString());
+            //save();
         }
 
 
         public void showPoorest(long group)
         {
-            var users = userinfo.Values.ToList();
+            var users = ruuserinfo.Values.ToList();
             users.Sort((left, right) =>
             {
-                if (left.money > right.money)
+                if (left.user.money > right.user.money)
                     return 1;
-                else if (left.money == right.money)
+                else if (left.user.money == right.user.money)
                     return 0;
                 else
                     return -1;
@@ -745,15 +727,15 @@ namespace Native.Csharp.App.Actors
             sb.Append("赛 🐎 穷 人 榜 \r\n");
             for (int i = 0; i < Math.Min(users.Count, 10); i++)
             {
-                sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{users[i].money}枚\r\n");
+                sb.Append($"{i + 1}:{getQQNick(users[i].user.qq)},{users[i].user.money}枚\r\n");
             }
-            showScene(group, -1, sb.ToString());
-            save();
+            outputMessage(group, -1, sb.ToString());
+            //save();
         }
 
         public void showMostPlayTime(long group)
         {
-            var users = userinfo.Values.ToList();
+            var users = ruuserinfo.Values.ToList();
             users.Sort((left, right) =>
             {
                 if (left.getPlayTime()  < right.getPlayTime())
@@ -768,25 +750,18 @@ namespace Native.Csharp.App.Actors
             sb.Append("赛 🐎 赌 狗 榜 \r\n");
             for (int i = 0; i < Math.Min(users.Count, 10); i++)
             {
-                sb.Append($"{i + 1}:{getQQNick(users[i].qq)},赌了{users[i].wintime + users[i].losetime}次\r\n");
+                sb.Append($"{i + 1}:{getQQNick(users[i].user.qq)},赌了{users[i].wintime + users[i].losetime}次\r\n");
             }
-            showScene(group, -1, sb.ToString());
-            save();
+            outputMessage(group, -1, sb.ToString());
+            //save();
         }
 
-        public void showMyInfo(long group, long user)
+        public void showMyRHInfo(long group, long userqq)
         {
-            if (!userinfo.ContainsKey(user)) userinfo[user] = new UserInfo(user, 10, 0, 0, new DateTime(2019, 1, 1));
-            var u = userinfo[user];
-            showScene(group, user, $"您的账上有{u.money}枚比特币，共下注{u.losetime+u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%");
-            save();
-        }
-        
-        public void addMoney(long group, long user, int money)
-        {
-            if (!userinfo.ContainsKey(user)) userinfo[user] = new UserInfo(user, 10, 0, 0, new DateTime(2019, 1, 1));
-            userinfo[user].money += money;
-            save();
+            if (!ruuserinfo.ContainsKey(userqq)) ruuserinfo[userqq] = new RHUserInfo(btc.get(userqq), 0, 0, 0);
+            var u = ruuserinfo[userqq];
+            outputMessage(group, userqq, $"您的账上有{u.user.money}枚比特币，在赌马上消费过{u.hrmoney}枚比特币，共下注{u.losetime+u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%");
+            // save();
         }
     }
 }
