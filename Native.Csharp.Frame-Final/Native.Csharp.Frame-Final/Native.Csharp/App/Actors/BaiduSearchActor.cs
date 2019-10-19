@@ -113,8 +113,8 @@ namespace Native.Csharp.App.Actors
                 tmp = ItemParser.StripHTML(tmp);
                 try
                 {
-                    if (!Directory.Exists(path + answerPath)) Directory.CreateDirectory(path + answerPath);
-                    File.WriteAllText($"{path}{answerPath}{str}.txt", tmp);
+                    //if (!Directory.Exists(path + answerPath)) Directory.CreateDirectory(path + answerPath);
+                    //File.WriteAllText($"{path}{answerPath}{str}.txt", tmp);
                 }
                 catch (Exception e)
                 {
@@ -150,6 +150,7 @@ namespace Native.Csharp.App.Actors
                     }
                     else
                         result = tmp2;
+                    result += "...";
                 }
             }
 

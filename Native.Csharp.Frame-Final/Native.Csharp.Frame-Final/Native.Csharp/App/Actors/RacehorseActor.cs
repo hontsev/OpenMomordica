@@ -170,7 +170,7 @@ namespace Native.Csharp.App.Actors
 
         public string bet(RHUserInfo _user, int _roadnum, int _money)
         {
-            if (status != 1) return "";
+            if (status != 1 || _money<=0) return "";
             if (!bets.ContainsKey(_user))
             {
                 bets[_user] = new Dictionary<int, int>();
@@ -386,10 +386,10 @@ namespace Native.Csharp.App.Actors
                         showScene(id, -1, getMatchScene());
                         if (winnerRoad > 0)
                         {
+                            status = 3;
                             showScene(id, -1, $"比赛结束！{winnerRoad}号马赢了！");
                             showScene(id, -1, calBetResult(winnerRoad));
                             winnerRoad = -1;
-                            status = 3;
                         }
                         nowTime = 1;
                     }

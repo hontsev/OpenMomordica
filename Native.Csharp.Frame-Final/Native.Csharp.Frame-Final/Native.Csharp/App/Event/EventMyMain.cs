@@ -96,7 +96,7 @@ namespace Native.Csharp.App.Event
                         if (Directory.Exists(rootDict + historyPath)) Directory.CreateDirectory(rootDict + historyPath);
 
                         btc.init(sendGroup, getQQNick, rootDict + DataBTCPath);
-                        modes.init(rootDict + DataModePath);
+                        modes.init(sendGroup, rootDict + DataModePath);
                         baidu.init(rootDict + DataBaiduPath);
                         proof.init(rootDict + DataProofPath);
                         weather.init(rootDict + DataWeatherPath);
@@ -551,11 +551,7 @@ namespace Native.Csharp.App.Event
             }
 
             answer = baidu.getZhidaoAnswer(question);
-            if (answer.Length > 0)
-            {
-                msg = answer + "...";
-            }
-            if (modes.rand.Next(0, 100) > 75 || msg.Length <= 0)
+            if (modes.rand.Next(0, 100) > 85 || msg.Length <= 0)
             {
                 try
                 {
@@ -666,12 +662,22 @@ namespace Native.Csharp.App.Event
             {
                 case "正常": msg += getAnswerNormal(user, question); break;
                 case "混沌": msg += modes.getAnswerChaos(user, question); break;
+                case "测试": 
+                    if (group == config.testGroup)
+                    {
+                        msg += modes.getHistoryReact(group, user);
+                        return;
+                    }
+                    else
+                    {
+                        msg += modes.getAnswerChaos(user, question); break;
+                    }
+                    break;
                 default: msg += modes.getAnswerWithMode(user, question, modeName); break;
             }
             msg = ItemParser.getHexie(msg);
             sendGroup(group, user, msg);
             saveMsg(group, config.myQQ, msg.Trim());
-
         }
 
         /// <summary>
@@ -701,6 +707,7 @@ namespace Native.Csharp.App.Event
             {
                 case "正常": msg += getAnswerNormal(user, question); break;
                 case "混沌": msg += modes.getAnswerChaos(user, question); break;
+                case "测试": msg += modes.getAnswerChaos(user, question); break;
                 default: msg += modes.getAnswerWithMode(user, question, modeName); break;
             }
             msg = ItemParser.getHexie(msg);

@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static Native.Csharp.App.Event.MomordicaMain;
 
 namespace Native.Csharp.App.Actors
 {
@@ -36,7 +38,7 @@ namespace Native.Csharp.App.Actors
         string randomch = "随机-随机汉字.txt";
         string randomChar = "";
 
-
+        public sendQQGroupMsgHandler outputMessage;
 
 
         public ModeActor()
@@ -48,10 +50,11 @@ namespace Native.Csharp.App.Actors
         /// 模式配置初始化，读取目前各群各人的模式配置，刷新目前苦瓜支持的模式列表
         /// </summary>
         /// <param name="path"></param>
-        public void init(string path)
+        public void init(sendQQGroupMsgHandler _outputMessage, string path)
         {
             try
             {
+                outputMessage = _outputMessage;
                 this.path = path;
                 // load modes
                 modedict = new Dictionary<string, List<string>>();
@@ -287,6 +290,71 @@ namespace Native.Csharp.App.Actors
             }
 
             return result;
+        }
+
+        public string getHistoryReact(long group, long userqq)
+        {
+            string result = "";
+
+            string historyPath = path.Replace("DataMode", "_history\\group");
+            var files = Directory.GetFiles(historyPath, "*.txt");
+            int maxtime = 10;
+            try
+            {
+                if (files.Length <= 0) return "1";
+                while (maxtime-- > 0)
+                {   
+                    int findex = rand.Next(files.Length);
+                    string[] lines = FileIOActor.readLines(files[findex]).ToArray();
+                    if (lines.Length < 100) continue;
+                    int begin = rand.Next(lines.Length - 5);
+                    int maxnum = rand.Next(1, 5);
+                    int num = lines.Length - begin;// rand.Next(10, lines.Length - begin);
+                    bool find = false;
+                    string targetuser = "";
+                    for(int i = 0; i < num; i++)
+                    {
+                        try
+                        {
+                            var items = lines[begin + i].Trim().Split('\t');
+                            if (items.Length >= 3)
+                            {
+                                string ban = "2715126750 2045098852 188618935 2854196310";
+                                if (ban.Contains(items[1])) continue;
+                                if (targetuser.Length > 0 && targetuser != items[1]) continue;
+                                targetuser = items[1];
+                                string msg = items[2].Trim();
+                                if (msg.Contains("2715126750") || msg.Contains("2045098852")) continue;
+                                if (msg.Contains("维尼") || msg.Contains("支那") || msg.Contains("本群")) continue;
+                                msg = msg.Replace("[视频]你的QQ暂不支持查看视频短片，请升级到最新版本后查看。", "");
+                                msg = Regex.Replace(msg, "\\[CQ\\:[^\\]]+\\]", "");
+                                if (msg.Trim().StartsWith("苦瓜")) continue;
+                                msg = msg.Trim();
+                                if (msg.Length <= 0) continue;
+                                //msg = Regex.Replace(msg, "\\[CQ\\:image[^\\]]+\\]", "");
+                                outputMessage(group, 0, msg);
+                                find = true;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                        }
+                        maxnum -= 1;
+                        if (maxnum <= 0) break;
+                        
+                    }
+                    if(find)
+                    break;
+                }
+            }
+            catch(Exception e)
+            {
+                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+            }
+
+
+            return "2";
         }
 
 
