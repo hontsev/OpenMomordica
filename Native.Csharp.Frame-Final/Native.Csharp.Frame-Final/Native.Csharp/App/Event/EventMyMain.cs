@@ -416,6 +416,41 @@ namespace Native.Csharp.App.Event
                 return true;
             }
 
+            // 随机汉字
+            if (msg.StartsWith("随机"))
+            {
+                msg = msg.Replace("随机", "").Trim();
+                int time = 1;
+                int num = 1;
+                if(msg.Contains("*"))
+                {
+                    try
+                    {
+                        var item = msg.Split('*');
+                        num = int.Parse(item[0]);
+                        time = int.Parse(item[1]);
+                    }
+                    catch { }
+                }
+                try
+                {
+                    num = int.Parse(msg);
+                }
+                catch { }
+                string res = "";
+                if (time > 0 && time < 200 && num > 0 && num < 200 && num*time<1000)
+                {
+                    res = modes.getRandomCharSentence(time, num);
+                }
+                else
+                {
+                    res = "太多了，溢出来了！";
+                }
+                if (isGroup) sendGroup(group, user, res);
+                else sendPrivate(user, res);
+                return true;
+            }
+
             // BTC货币系统
             if (isGroup && msg == "签到")
             {

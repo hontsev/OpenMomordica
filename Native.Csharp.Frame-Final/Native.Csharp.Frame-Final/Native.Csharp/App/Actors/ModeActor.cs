@@ -25,12 +25,18 @@ namespace Native.Csharp.App.Actors
         public Dictionary<long, string> groupmode = new Dictionary<long, string>();
         public Random rand = new Random();
         MD5 md5 = MD5.Create();
+
         string chaosv = "混沌-名词.txt";
         string chaosm = "混沌-情绪词.txt";
         string chaosw = "混沌-小万邦部分.txt";
         List<string[]> chaosWord = new List<string[]>();
         List<string> chaosMotion = new List<string>();
         List<string> chaosXwb = new List<string>();
+
+        string randomch = "随机-随机汉字.txt";
+        string randomChar = "";
+
+
 
 
         public ModeActor()
@@ -94,6 +100,9 @@ namespace Native.Csharp.App.Actors
                 }
                 // xwb
                 chaosXwb = FileIOActor.readLines(path + chaosw).ToList();
+
+                // random
+                randomChar = FileIOActor.readTxtFile(path + randomch, Encoding.UTF8).Trim();
 
                 // default
                 defaultAnswers = FileIOActor.readLines(path + defaultAnswerName).ToList();
@@ -234,7 +243,7 @@ namespace Native.Csharp.App.Actors
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
-        string getRandomSentence(string str)
+        string getChaosRandomSentence(string str)
         {
             string result = "";
             byte[] md5data = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
@@ -264,6 +273,23 @@ namespace Native.Csharp.App.Actors
             return result;
         }
 
+        public string getRandomCharSentence(int time, int num)
+        {
+            string result = "";
+
+            for(int i = 0; i < time; i++)
+            {
+                for(int j = 0; j < num; j++)
+                {
+                    result += randomChar[rand.Next(randomChar.Length)];
+                }
+                result += " ";
+            }
+
+            return result;
+        }
+
+
         /// <summary>
         /// 混沌模式的回复
         /// 混沌模式依然保留知识图谱基本查询功能
@@ -277,7 +303,7 @@ namespace Native.Csharp.App.Actors
             string msg = "";
                 if (rand.Next(0, 100) < 85)
                 {
-                    msg = getRandomSentence(question) + getMotionString();
+                    msg = getChaosRandomSentence(question) + getMotionString();
                 }
                 else
                 {
