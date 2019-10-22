@@ -129,18 +129,23 @@ namespace Native.Csharp.App.Actors
         /// <summary>
         /// 字符串数字论证
         /// </summary>
-        /// <param name="str"></param>
+        /// <param name="str1"></param>
+        /// <param name="str2"></param>
         /// <returns></returns>
-        public bool getProofString(string str)
+        public bool getProofString(string str1, string str2)
         {
             lock (proofLock)
             {
-                if (!string.IsNullOrWhiteSpace(str))
+                if (!string.IsNullOrWhiteSpace(str1) && string.IsNullOrWhiteSpace(str2))
                 {
                     long trynum;
-                    if (long.TryParse(str, out trynum)) return getProof(trynum);
-                    else if (getProofEngIndex(str)) return true;
-                    else if (getProofBh(str)) return true;
+                    if (long.TryParse(str1, out trynum)) return getProof(trynum);
+                    else if (getProofEngIndex(str1)) return true;
+                    else if (getProofBh(str1)) return true;
+
+                }
+                else if(!string.IsNullOrWhiteSpace(str1) && !string.IsNullOrWhiteSpace(str2))
+                {
 
                 }
             }

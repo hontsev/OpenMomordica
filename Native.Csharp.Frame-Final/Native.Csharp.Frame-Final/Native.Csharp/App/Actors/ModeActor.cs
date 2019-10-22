@@ -41,6 +41,9 @@ namespace Native.Csharp.App.Actors
         string gongshouName = "gongshou.txt";
         List<string> gongshou = new List<string>();
 
+        string penName = "pen.txt";
+        List<string> penlist = new List<string>();
+
         public sendQQGroupMsgHandler outputMessage;
 
 
@@ -128,6 +131,9 @@ namespace Native.Csharp.App.Actors
                 }
                 if (!string.IsNullOrWhiteSpace(thistmp)) gongshou.Add(thistmp);
 
+                // pen
+                penlist = FileIOActor.readLines(path + penName, Encoding.UTF8).ToList();
+
                 // default
                 defaultAnswers = FileIOActor.readLines(path + defaultAnswerName).ToList();
             }
@@ -150,7 +156,7 @@ namespace Native.Csharp.App.Actors
 
         public void setUserMode(long user, string modeName)
         {
-            if (!modeExist(modeName)) return;
+           // if (!modeExist(modeName)) return;
             privatemode[user] = modeName;
             try
             {
@@ -166,7 +172,7 @@ namespace Native.Csharp.App.Actors
 
         public void setGroupMode(long group, string modeName)
         {
-            if (!modeExist(modeName)) return;
+            //if (!modeExist(modeName)) return;
             groupmode[group] = modeName;
             try
             {
@@ -196,7 +202,7 @@ namespace Native.Csharp.App.Actors
             {
                 modeName = groupmode[group];
             }
-            if(!modeExist(modeName)) modeName = "混沌";
+           // if(!modeExist(modeName)) modeName = "混沌";
             return modeName;
         }
 
@@ -207,7 +213,7 @@ namespace Native.Csharp.App.Actors
             {
                 modeName = privatemode[user];
             }
-            if (!modeExist(modeName)) modeName = "混沌";
+            //if (!modeExist(modeName)) modeName = "混沌";
             return modeName;
         }
 
@@ -331,6 +337,24 @@ namespace Native.Csharp.App.Actors
             }
 
             return result;
+        }
+
+        public string getPen(long group, long user)
+        {
+            try
+            {
+                int num = rand.Next(2, 10);
+                while (num-- > 0)
+                {
+                    outputMessage(group, user, penlist[rand.Next(penlist.Count)].Trim());
+                }
+                return "";
+            }
+            catch (Exception e)
+            {
+                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                return "";
+            }
         }
 
         public string getHistoryReact(long group, long userqq)

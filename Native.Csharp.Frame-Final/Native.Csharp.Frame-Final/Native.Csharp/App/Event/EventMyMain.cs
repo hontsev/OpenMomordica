@@ -189,10 +189,34 @@ namespace Native.Csharp.App.Event
                 else sendPrivate(user, modeindexs);
                 return true;
             }
-            foreach (var mode in modes.modedict.Keys)
+            Regex modereg = new Regex("(\\S+)模式\\s*(on|off)", RegexOptions.IgnoreCase);
+            var moderes = modereg.Match(msg);
+            if (moderes.Success)
             {
-                if (msg.Contains($"{mode}模式on"))
+                try
                 {
+                    string mode = moderes.Groups[1].ToString();
+                    string swit = moderes.Groups[2].ToString().ToLower();
+                    if (swit == "off") mode = "正常";
+                    if (!modes.modedict.ContainsKey(mode))
+                    {
+                        if (group == config.testGroup && (mode == "测试" || mode == "喷人"))
+                        {
+                            // pass
+                        }
+                        else
+                        {
+                            string modeindexs = "苦瓜还没有这个模式（小声）";
+                            if (isGroup) sendGroup(group, user, modeindexs);
+                            else sendPrivate(user, modeindexs);
+
+                            modeindexs = modes.printModeList();
+                            modeindexs += "~输入“xx模式on”即可切换模式~";
+                            if (isGroup) sendGroup(group, user, modeindexs);
+                            else sendPrivate(user, modeindexs);
+                            return true;
+                        }
+                    }
                     if (isGroup)
                     {
                         sendGroup(group, 0, $"~苦瓜的{mode}模式启动~");
@@ -205,37 +229,44 @@ namespace Native.Csharp.App.Event
                     }
                     return true;
                 }
-            }
-            if (msg.Contains("模式on") || msg.StartsWith("模式"))
-            {
-                string modeindexs = "苦瓜还没有这个模式（小声）";
-                if (isGroup) sendGroup(group, user, modeindexs);
-                else sendPrivate(user, modeindexs);
-
-                modeindexs = modes.printModeList();
-                modeindexs += "~输入“xx模式on”即可切换模式~";
-                if (isGroup) sendGroup(group, user, modeindexs);
-                else sendPrivate(user, modeindexs);
-                return true;
+                catch { }
             }
 
             // 数字论证
-            if (msg.StartsWith("数字论证"))
+            Regex szlzreg = new Regex("数字论证\\s*(\\S+)");
+            var szlzres = szlzreg.Match(msg);
+            if (szlzres.Success)
             {
-                bool proofsuccess = proof.getProofString(msg.Replace("数字论证", "").Trim());
-                if (proofsuccess)
+                try
                 {
-                    //sendPrivate(masterQQ, proof.finalproof);
-                    if (isGroup) sendGroup(group, user, proof.finalproof);
-                    else sendPrivate(user, proof.finalproof);
+                    string lzdata = szlzres.Groups[1].ToString();
+                    string lz1, lz2;
+                    if (!lzdata.Contains("-"))
+                    {
+                        lz1 = lzdata.Trim();
+                        lz2 = "";
+                    }
+                    else
+                    {
+                        lz1 = lzdata.Split('-')[0].Trim();
+                        lz2 = lzdata.Split('-')[1].Trim();
+                    }
+                    bool proofsuccess = proof.getProofString(lz1, lz2);
+                    if (proofsuccess)
+                    {
+                        if (isGroup) sendGroup(group, user, proof.finalproof);
+                        else sendPrivate(user, proof.finalproof);
+                    }
+                    else
+                    {
+                        string resspeak = "论不出来，我紫菜";
+                        if (isGroup) sendGroup(group, user, resspeak);
+                        else sendPrivate(user, resspeak);
+                    }
+                    return true;
                 }
-                else
-                {
-                    string resspeak = "论不出来，我紫菜";
-                    if (isGroup) sendGroup(group, user, resspeak);
-                    else sendPrivate(user, resspeak);
-                }
-                return true;
+                catch { }
+
             }
 
             // 功能介绍
@@ -467,8 +498,6 @@ namespace Native.Csharp.App.Event
                     }
                 }
                 catch { }
-                
-                
             }
 
             // BTC货币系统
@@ -682,17 +711,8 @@ namespace Native.Csharp.App.Event
             {
                 case "正常": msg += getAnswerNormal(user, question); break;
                 case "混沌": msg += modes.getAnswerChaos(user, question); break;
-                case "测试": 
-                    if (group == config.testGroup)
-                    {
-                        msg += modes.getHistoryReact(group, user);
-                        return;
-                    }
-                    else
-                    {
-                        msg += modes.getAnswerChaos(user, question); break;
-                    }
-                    break;
+                case "喷人": msg += modes.getPen(group, user); return; break;
+                case "测试":  msg += modes.getHistoryReact(group, user); return; break;
                 default: msg += modes.getAnswerWithMode(user, question, modeName); break;
             }
             msg = ItemParser.getHexie(msg);
@@ -727,7 +747,8 @@ namespace Native.Csharp.App.Event
             {
                 case "正常": msg += getAnswerNormal(user, question); break;
                 case "混沌": msg += modes.getAnswerChaos(user, question); break;
-                case "测试": msg += modes.getAnswerChaos(user, question); break;
+                case "喷人": msg += modes.getPen(-1, user); return; break;
+                case "测试": msg += modes.getHistoryReact(-1, user); return; break;
                 default: msg += modes.getAnswerWithMode(user, question, modeName); break;
             }
             msg = ItemParser.getHexie(msg);
