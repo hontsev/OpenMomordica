@@ -18,10 +18,10 @@ namespace Native.Csharp.App.Actors
         string modePrivateName = "_mode_private.txt";
         string modeGroupName = "_mode_group.txt";
         string defaultAnswerName = "_defaultanswer.txt";
+        
 
         public Dictionary<string, List<string>> modedict = new Dictionary<string, List<string>>();
         List<string> sgn = new List<string>();
-        List<string> sgnover = new List<string>();
         List<string> defaultAnswers = new List<string>();
         public Dictionary<long, string> privatemode = new Dictionary<long, string>();
         public Dictionary<long, string> groupmode = new Dictionary<long, string>();
@@ -37,6 +37,9 @@ namespace Native.Csharp.App.Actors
 
         string randomch = "随机-随机汉字.txt";
         string randomChar = "";
+
+        string gongshouName = "gongshou.txt";
+        List<string> gongshou = new List<string>();
 
         public sendQQGroupMsgHandler outputMessage;
 
@@ -106,6 +109,24 @@ namespace Native.Csharp.App.Actors
 
                 // random
                 randomChar = FileIOActor.readTxtFile(path + randomch, Encoding.UTF8).Trim();
+
+                // gongshou
+                gongshou = new List<string>();
+                var res = FileIOActor.readLines(path + gongshouName, Encoding.UTF8);
+                string thistmp = "";
+                foreach(var line in res)
+                {
+                    if (line.Trim() == "$$$$$$$$" && !string.IsNullOrWhiteSpace(thistmp))
+                    {
+                        gongshou.Add(thistmp);
+                        thistmp = "";
+                    }
+                    else
+                    {
+                        thistmp += line + "\r\n";
+                    }
+                }
+                if (!string.IsNullOrWhiteSpace(thistmp)) gongshou.Add(thistmp);
 
                 // default
                 defaultAnswers = FileIOActor.readLines(path + defaultAnswerName).ToList();
@@ -292,6 +313,26 @@ namespace Native.Csharp.App.Actors
             return result;
         }
 
+        public string getGongshou(string gong, string shou)
+        {
+            string result = "";
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(gong) && !string.IsNullOrWhiteSpace(shou) && gongshou.Count > 0)
+                {
+                    result = gongshou[rand.Next(gongshou.Count)];
+                    result = result.Replace("<攻>", gong).Replace("<受>", shou);
+                }
+            }
+            catch(Exception ex)
+            {
+                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return result;
+        }
+
         public string getHistoryReact(long group, long userqq)
         {
             string result = "";
@@ -325,8 +366,10 @@ namespace Native.Csharp.App.Actors
                                 targetuser = items[1];
                                 string msg = items[2].Trim();
                                 if (msg.Contains("2715126750") || msg.Contains("2045098852")) continue;
-                                if (msg.Contains("维尼") || msg.Contains("支那") || msg.Contains("本群")) continue;
-                                msg = msg.Replace("[视频]你的QQ暂不支持查看视频短片，请升级到最新版本后查看。", "");
+                                if (msg.Contains("维尼") || msg.Contains("支那") || 
+                                    msg.Contains("本群") || msg.Contains("[CQ") || 
+                                    msg.Contains("被管理员") || msg.Contains("你的QQ暂不支持"))
+                                    continue;
                                 msg = Regex.Replace(msg, "\\[CQ\\:[^\\]]+\\]", "");
                                 if (msg.Trim().StartsWith("苦瓜")) continue;
                                 msg = msg.Trim();

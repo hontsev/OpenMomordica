@@ -97,7 +97,7 @@
     <Compile Include="App\Actors\BeastProofActor.cs" />
     <Compile Include="App\Actors\BilibiliLiveActor.cs" />
     <Compile Include="App\Actors\BTCActor.cs" />
-    <Compile Include="App\Actors\CmdActor.cs" />
+    <Compile Include="App\Actors\ConfigActor.cs" />
     <Compile Include="App\Actors\DiceActor.cs" />
     <Compile Include="App\Actors\FileIOActor.cs" />
     <Compile Include="App\Actors\ItemParser.cs" />

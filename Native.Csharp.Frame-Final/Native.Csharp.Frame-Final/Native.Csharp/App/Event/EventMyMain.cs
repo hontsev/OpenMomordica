@@ -451,6 +451,26 @@ namespace Native.Csharp.App.Event
                 return true;
             }
 
+            // 攻受
+            Regex gs = new Regex("(.+)攻(.+)受");
+            var matchgs = gs.Match(msg);
+            if (matchgs.Success)
+            {
+                try
+                {
+                    string res = modes.getGongshou(matchgs.Groups[1].ToString(), matchgs.Groups[2].ToString());
+                    if (res.Length > 0)
+                    {
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+                catch { }
+                
+                
+            }
+
             // BTC货币系统
             if (isGroup && msg == "签到")
             {
@@ -550,7 +570,7 @@ namespace Native.Csharp.App.Event
                 return kganswer;
             }
 
-            answer = baidu.getZhidaoAnswer(question);
+            msg = baidu.getZhidaoAnswer(question);
             if (modes.rand.Next(0, 100) > 85 || msg.Length <= 0)
             {
                 try

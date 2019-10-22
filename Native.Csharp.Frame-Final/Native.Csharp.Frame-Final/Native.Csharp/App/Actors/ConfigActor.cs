@@ -87,17 +87,4 @@ namespace Native.Csharp.App.Actors
         }
     }
 
-    class CmdActor
-    {
-
-        public CmdActor()
-        {
-
-        }
-
-        public void dealCmd(string str)
-        {
-
-        }
-    }
 }

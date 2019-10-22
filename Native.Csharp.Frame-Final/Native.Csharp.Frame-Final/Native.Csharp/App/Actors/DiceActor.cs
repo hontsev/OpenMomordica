@@ -62,7 +62,7 @@ namespace Native.Csharp.App.Actors
             List<int> ress = new List<int>();
             for (int i = 0; i < DiceNum; i++)
             {
-                ress.Add(faceNum > 1 ? rand.Next(1, faceNum) : 1);
+                ress.Add(faceNum > 1 ? rand.Next(faceNum)+1 : 1);
             }
             res = ress.Sum();
             if (DiceNum == 1) resdesc = $"{res}";
