@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,6 +17,10 @@ namespace Native.Csharp.App.Actors
     /// </summary>
     class TranslateActor
     {
+        string countryListName = "googletlist.txt";
+        Dictionary<string, string> ctlist = new Dictionary<string, string>();
+
+
         public const string TranslateURL = "http://translate.google.cn/translate_a/single?client=gtx&dt=t&ie=UTF-8&oe=UTF-8&sl=auto&tl=zh-CN";
 
         private Regex regex = new Regex("(?<=\\[\\\").*?(?=\\\")");
@@ -26,27 +32,86 @@ namespace Native.Csharp.App.Actors
 
         }
 
+        public void init(string path)
+        {
+            try
+            {
+                ctlist = new Dictionary<string, string>();
+                var lines = FileIOActor.readLines(path + countryListName);
+                foreach (var line in lines)
+                {
+                    string[] vitem = line.Split('\t');
+                    if (vitem.Length >= 2) ctlist[vitem[0]] = vitem[1];
+                }
+            }
+            catch (Exception e)
+            {
+                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+            }
+        }
+
+        string getTranslateUrl(string from, string to)
+        {
+            string fn = "auto", tn = "zh-CN";
+            if (ctlist.ContainsKey(from)) fn = ctlist[from];
+            else if (ctlist.ContainsKey(from + "文")) fn = ctlist[from + "文"];
+            else if (ctlist.ContainsKey(from + "语")) fn = ctlist[from + "语"];
+
+            if (ctlist.ContainsKey(to)) tn = ctlist[to];
+            else if (ctlist.ContainsKey(to + "文")) tn = ctlist[to + "文"];
+            else if (ctlist.ContainsKey(to + "语")) tn = ctlist[to + "语"];
+
+            return $"http://translate.google.cn/translate_a/single?client=gtx&dt=t&ie=UTF-8&oe=UTF-8&sl={fn}&tl={tn}";
+
+        }
+
 
         /// <summary>
         /// 获取翻译结果
         /// </summary>
         /// <param name="src"></param>
         /// <returns></returns>
-        public string Translation(string src)
+        public string Translation(string src, string to="简体中文", string from="自动")
         {
             InitTkk();
             string tk = GetTK(src);
-            string url = $"{TranslateURL}&tk={tk}&q={ UrlEncode(src)}";
+            string url = $"{getTranslateUrl(from, to)}&tk={tk}&q={UrlEncode(src)}";
+            FileIOActor.log(url);
             //return url;
             string httpresult = WebConnectActor.getData(url, Encoding.UTF8);
-            //正则获取结果集
-            int begin = httpresult.IndexOf("[[[\"") + 4;
-            int end = httpresult.IndexOf("\",\"");
+            FileIOActor.log(httpresult);
             try
             {
-                httpresult = httpresult.Substring(begin, end - begin);
+                string res = "";
+                JArray jo = (JArray)JsonConvert.DeserializeObject(httpresult);
+                //JObject jo = JObject.Parse(httpresult);
+               // FileIOActor.log(jo[0].ToString());
+                int resnum = jo[0].Count();
+                if (resnum >= 1)
+                {
+                    foreach(var item in jo[0])
+                    {
+                        //FileIOActor.log(item.ToString());
+                        //FileIOActor.log(item[0].ToString());
+                        res += item[0].ToString() + Environment.NewLine;
+                    }
+                }
+                return res.Trim();
             }
-            catch { }
+            catch(Exception e)
+            {
+                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+            }
+            
+
+            ////正则获取结果集
+            //int begin = httpresult.IndexOf("[[[\"") + 4;
+            //int end = httpresult.IndexOf("\",\"");
+            //try
+            //{
+            //    httpresult = httpresult.Substring(begin, end - begin);
+            //}
+            //catch { }
             return httpresult;
         }
 
@@ -66,7 +131,7 @@ namespace Native.Csharp.App.Actors
                 sb.Append(@"%" + Convert.ToString(byStr[i], 16));
             }
 
-            return (sb.ToString());
+            return (sb.ToString().Replace("%d%a", ""));
         }
 
 

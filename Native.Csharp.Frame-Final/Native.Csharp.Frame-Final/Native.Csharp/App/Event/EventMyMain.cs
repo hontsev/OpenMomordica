@@ -46,6 +46,7 @@ namespace Native.Csharp.App.Event
         string DataBilibiliPath = "\\DataBilibili\\";
         string DataRacehorsePath = "\\DataRacehorse\\";
         string DataBTCPath = "\\DataBTC\\";
+        string DataGoogleTransPath = "\\DataGoogleTrans\\";
 
         bool inited = false;
         object dealmsgMutex = new object();
@@ -103,6 +104,7 @@ namespace Native.Csharp.App.Event
                         bilibili.init(rootDict + DataBilibiliPath);
                         racehorse.init(sendGroup, getQQNick, btc, rootDict + DataRacehorsePath);
                         config.init(rootDict + configFile);
+                        trans.init(rootDict + DataGoogleTransPath);
                         
 
                         userBlacklist = new Dictionary<long, long>();
@@ -374,14 +376,22 @@ namespace Native.Csharp.App.Event
             }
 
             // 翻译
-            if (msg.StartsWith("翻译"))
+            Regex transreg = new Regex("(\\S+)译(\\S+)\\s+");
+            var transmatch = transreg.Match(msg);
+            if (transmatch.Success)
             {
-                msg = msg.Substring(2);
-                if (!string.IsNullOrWhiteSpace(msg))
+                string msgyilist = transmatch.Groups[0].ToString().Trim();
+                string msgtar = msg.Substring(msgyilist.Length).Trim();
+                var lists = msgyilist.Split('译');
+                if (lists.Length >= 2 && msgtar.Length>0)
                 {
-                    string transstr = trans.Translation(msg);
-                    if (isGroup) sendGroup(group, user, transstr);
-                    else sendPrivate(user, transstr);
+                    string res = msgtar;
+                    for(int i = 0; i < lists.Length - 1; i++)
+                    {
+                        res = trans.Translation(res, lists[i + 1], lists[i]);
+                    }
+                    if (isGroup) sendGroup(group, user, res);
+                    else sendPrivate(user, res);
                     return true;
                 }
             }
@@ -946,7 +956,7 @@ namespace Native.Csharp.App.Event
             if (mmdk.config.useGroupMsgBuf)
             {
                 msg = "\r\n" + msg;
-                for (int i = 0; i < 54; i++)    // 33
+                for (int i = 0; i < 55; i++)    // 33  54
                 {
                     msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
                 }

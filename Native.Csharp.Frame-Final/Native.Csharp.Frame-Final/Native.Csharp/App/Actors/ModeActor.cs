@@ -384,7 +384,7 @@ namespace Native.Csharp.App.Actors
                             var items = lines[begin + i].Trim().Split('\t');
                             if (items.Length >= 3)
                             {
-                                string ban = "2715126750 2045098852 188618935 2854196310";
+                                string ban = "2715126750 2045098852 188618935 2854196310 287859992 2963959417";
                                 if (ban.Contains(items[1])) continue;
                                 if (targetuser.Length > 0 && targetuser != items[1]) continue;
                                 targetuser = items[1];
@@ -392,7 +392,7 @@ namespace Native.Csharp.App.Actors
                                 if (msg.Contains("2715126750") || msg.Contains("2045098852")) continue;
                                 if (msg.Contains("维尼") || msg.Contains("支那") || 
                                     msg.Contains("本群") || msg.Contains("[CQ") || 
-                                    msg.Contains("被管理员") || msg.Contains("你的QQ暂不支持"))
+                                    msg.Contains("被管理员") || msg.Contains("你的QQ暂不支持") || msg.Contains("请使用新版手机QQ") || msg.Contains("☆西方苦瓜公主☆"))
                                     continue;
                                 msg = Regex.Replace(msg, "\\[CQ\\:[^\\]]+\\]", "");
                                 if (msg.Trim().StartsWith("苦瓜")) continue;
