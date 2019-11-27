@@ -99,6 +99,7 @@
     <Compile Include="App\Actors\BTCActor.cs" />
     <Compile Include="App\Actors\ConfigActor.cs" />
     <Compile Include="App\Actors\DiceActor.cs" />
+    <Compile Include="App\Actors\DivinationActor.cs" />
     <Compile Include="App\Actors\EsuActor.cs" />
     <Compile Include="App\Actors\FileIOActor.cs" />
     <Compile Include="App\Actors\ItemParser.cs" />
