@@ -81,40 +81,11 @@ namespace Native.Csharp.App.Actors
             }
         }
 
-        public void readRooms(int parea, int area)
+        public void saveRooms(List<LiveInfo> infos)
         {
-            int page = 1;
-            string sort = "online";
-            int sum = 0;
-            int sumindex = 0;
             try
             {
-                List<LiveInfo> infos = new List<LiveInfo>();
-                do
-                {
-                    string url = $"https://api.live.bilibili.com/room/v3/area/getRoomList?platform=web&parent_area_id={parea}&cate_id=0&area_id={area}&sort_type={sort}&page={page}&page_size=30&tag_version=1";
-                    string resstr = WebConnectActor.getData(url, Encoding.UTF8);
-                    JObject jo = JObject.Parse(resstr);
-                    sum = int.Parse(jo["data"]["count"].ToString());
-                    int num = jo["data"]["list"].Count();
-                    for (int i = 0; i < num; i++)
-                    {
-                        try
-                        {
-                            LiveInfo info = new LiveInfo();
-                            info.roomid = int.Parse(jo["data"]["list"][i]["roomid"].ToString());
-                            info.uid = int.Parse(jo["data"]["list"][i]["uid"].ToString());
-                            info.uname = jo["data"]["list"][i]["uname"].ToString();
-                            info.online = int.Parse(jo["data"]["list"][i]["online"].ToString());
-                            info.title = jo["data"]["list"][i]["title"].ToString();
-                            infos.Add(info);
-                        }
-                        catch { }
-                    }
-                    sumindex += num;
-                    page += 1;
-                } while (sumindex < sum);
-
+                //var infos = getLiveInfos(parea, area);
                 lock(searchMutex)
                 {
                     try {
@@ -278,43 +249,75 @@ namespace Native.Csharp.App.Actors
             int findmaxtime = 15;
             while (nameDict.ContainsKey(username) && findmaxtime-- >=0) username = nameDict[username];
             //FileIOActor.log(username + " <- name");
-            if (roomDict.ContainsKey(username))
-            { 
-                string roomid = roomDict[username];
-                //FileIOActor.log(roomid + " <- roomid");
-                string info = $"{username}" + getRoomInfo(roomid);
-                return info;
-            }
-            else
+            string[] tail = new string[] { "", "Official", "official", "Channel", "channel", "_Official", "_Channel" };
+            foreach(var t in tail)
             {
-                return $"没找到{username}的直播，他大概没开播8";
+                string un = username + t;
+                if (roomDict.ContainsKey(un))
+                {
+                    string roomid = roomDict[un];
+                    string info = $"{un}" + getRoomInfo(roomid);
+                    return info;
+                }
             }
+            return $"没找到{username}的直播，他大概没开播8";
         }
 
 
-
-        public string getLiveNum(string areaName)
+        public string getTitleSearch(string areaName, string searchItem)
         {
-            int page = 1;
-            string sort = "online";
-
             if (!areas.ContainsKey(areaName))
             {
                 return $"好像没在b站找到这个分区：" + areaName;
             }
             int parea = areas[areaName][0];
             int area = areas[areaName][1];
-            readRooms(parea,area);
-            string url = $"https://api.live.bilibili.com/room/v3/area/getRoomList?platform=web&parent_area_id={parea}&cate_id=0&area_id={area}&sort_type={sort}&page={page}&page_size=30&tag_version=1";
 
-            string resstr = WebConnectActor.getData(url, Encoding.UTF8);
-            JObject jo = JObject.Parse(resstr);
-            try
+            //readRooms(parea, area);
+
+            List<LiveInfo> infos = getLiveInfos(parea, area);
+            
+            int sum = 0;
+            StringBuilder sb = new StringBuilder();
+            List<string> livers = new List<string>();
+            foreach (var info in infos)
             {
-                int sum = int.Parse(jo["data"]["count"].ToString());
-                List<LiveInfo> infos = new List<LiveInfo>();
+                if (info.title.Contains(searchItem))
+                {
+                    sum += 1;
+                    livers.Add(info.uname);
+                }
+            }
+            if (sum <= 0)
+            {
+                sb.Append("🈚️");
+            }
+            else
+            {
+                sb.Append($"{areaName}现在有{sum}个{searchItem}：");
+                int maxshow = 10;
+                if (livers.Count <= maxshow) sb.Append(string.Join("，", livers.ToArray()));
+                else sb.Append(string.Join("，", livers.ToArray(), 0, maxshow) + " 等");
+            }
+
+            return sb.ToString();
+        }
+
+        public List<LiveInfo> getLiveInfos(int parea, int area, int maxpage=-1)
+        {
+            int page = 1;
+            string sort = "online";
+            int sum = 0;
+            int sumindex = 0;
+            List<LiveInfo> infos = new List<LiveInfo>();
+            do
+            {
+                string url = $"https://api.live.bilibili.com/room/v3/area/getRoomList?platform=web&parent_area_id={parea}&cate_id=0&area_id={area}&sort_type={sort}&page={page}&page_size=30&tag_version=1";
+                string resstr = WebConnectActor.getData(url, Encoding.UTF8);
+                JObject jo = JObject.Parse(resstr);
+                sum = int.Parse(jo["data"]["count"].ToString());
                 int num = jo["data"]["list"].Count();
-                for(int i = 0; i < num; i++)
+                for (int i = 0; i < num; i++)
                 {
                     try
                     {
@@ -322,30 +325,55 @@ namespace Native.Csharp.App.Actors
                         info.roomid = int.Parse(jo["data"]["list"][i]["roomid"].ToString());
                         info.uid = int.Parse(jo["data"]["list"][i]["uid"].ToString());
                         info.uname = jo["data"]["list"][i]["uname"].ToString();
-                        info.online= int.Parse(jo["data"]["list"][i]["online"].ToString());
+                        info.online = int.Parse(jo["data"]["list"][i]["online"].ToString());
                         info.title = jo["data"]["list"][i]["title"].ToString();
                         infos.Add(info);
                     }
                     catch { }
                 }
-                StringBuilder sb = new StringBuilder();
+                sumindex += num;
+                page += 1;
+                if (page == maxpage) break;
+            } while (sumindex < sum);
 
-                sb.Append($"{areaName}还有{sum}个人播，");
-                if (sum > 0)
-                {
-                    sb.Append($"第一是{infos[0].uname}，{infos[0].online}人气，在播{infos[0].title}");
-                }
-                else
-                {
-                    sb.Append("惊了。");
-                }
+            return infos;
+        }
 
-                return sb.ToString();
-            }
-            catch
+        public string getLiveNum(string areaName)
+        {
+            if (!areas.ContainsKey(areaName))
             {
-                return "";
+                return $"好像没在b站找到这个分区：" + areaName;
             }
+            int parea = areas[areaName][0];
+            int area = areas[areaName][1];
+
+            //readRooms(parea,area);
+
+            List<LiveInfo> infos = getLiveInfos(parea, area);
+            saveRooms(infos);
+            int sum = infos.Count;
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append($"{areaName}还有{sum}个人播");
+            if (sum > 0)
+            {
+                sb.Append($"\r\n第一是{infos[0].uname}，{infos[0].online}人气，在播{infos[0].title}");
+            }
+            if (sum > 1)
+            {
+                sb.Append($"\r\n第二是{infos[1].uname}，{infos[1].online}人气，在播{infos[1].title}");
+            }
+            if (sum > 2)
+            {
+                sb.Append($"\r\n第三是{infos[2].uname}，{infos[2].online}人气，在播{infos[2].title}");
+            }
+            if (sum <= 0)
+            {
+                sb.Clear();
+                sb.Append($"{areaName}目前无人在播。");
+            }
+            return sb.ToString();
 
         }
     }

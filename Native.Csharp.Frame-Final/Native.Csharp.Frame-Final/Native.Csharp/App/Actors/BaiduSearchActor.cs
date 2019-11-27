@@ -204,10 +204,12 @@ namespace Native.Csharp.App.Actors
         public string[] getBaiduKGResult(string words)
         {
             List<string> reslist = new List<string>();
-            string askUrl = "http://www.baidu.com/s?wd=" + WebConnectActor.UrlEncode(words);
+            string askUrl = "https://www.baidu.com/s?ie=utf-8&wd=" + WebConnectActor.UrlEncode(words);
             string html = WebConnectActor.getData(askUrl, Encoding.UTF8);
             //var html1 = HttpUtility.UrlDecode(html);
             //var html2 = Regex.Unescape(html);
+            //FileIOActor.log(askUrl);
+            //FileIOActor.log(html);
             HtmlDocument hdoc = new HtmlDocument();
             hdoc.LoadHtml(html);
 

@@ -307,41 +307,31 @@ namespace Native.Csharp.App.Event
                 return true;
             }
 
-            if ((msg == "拳交on"|| msg == "拳交马化腾") && user== config.masterQQ)
+            if (msg.Contains("拳交"))
             {
+                List<string> onMsg = new List<string> { "拳交on", "拳交ON", "开始拳交", "拳交马化腾", "拳交开始", "拳交启动", "拳交开启", "开启拳交" };
+                List<string> offMsg = new List<string> { "拳交off", "拳交OFF", "停止拳交", "结束拳交", "拳交停止", "拳交结束", "拳交关闭" };
+                List<string> qjusers = new List<string> { "807079241" , "3345806534" };
+                qjusers.Add(config.masterQQ.ToString());
                 string rmsg = "";
-                if (config.useGroupMsgBuf == false)
+                if (onMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || group==config.testGroup))
                 {
                     config.useGroupMsgBuf = true;
-                    rmsg = "好，苦瓜开始拳交马化腾";
+                    rmsg = "开始拳交马化腾";
                 }
-                else
-                {
-                    rmsg = "现在正在拳交啊";
-                }
-
-                if (isGroup) sendGroup(group, -1, rmsg);
-                else sendPrivate(user, rmsg);
-                return true;
-            }
-            else if (msg == "拳交off" && user == config.masterQQ)
-            {
-                string rmsg = "";
-                if (config.useGroupMsgBuf == true)
+                else if(offMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || group == config.testGroup))
                 {
                     config.useGroupMsgBuf = false;
-                    rmsg = "好，苦瓜不再拳交马化腾";
+                    rmsg = "不再拳交马化腾";
                 }
-                else
+                if (!string.IsNullOrWhiteSpace(rmsg))
                 {
-                    rmsg = "俺也没拳交啊";
+                    if (isGroup) sendGroup(group, -1, rmsg);
+                    else sendPrivate(user, rmsg);
+                    return true;
                 }
-
-                if (isGroup) sendGroup(group, -1, rmsg);
-                else sendPrivate(user, rmsg);
-                return true;
             }
-
+            
             // 天气 
             if (msg.EndsWith("天气"))
             {
@@ -397,6 +387,26 @@ namespace Native.Csharp.App.Event
             }
 
             // bilibili 功能
+            Regex bsearchreg = new Regex("(\\S+)区有多少(\\S+)");
+            var bseatchres = bsearchreg.Match(msg);
+            if (bseatchres.Success)
+            {
+                try
+                {
+                    string barea = bseatchres.Groups[1].ToString().Trim()+"区";
+                    string btar = bseatchres.Groups[2].ToString().Trim();
+
+                    string res = bilibili.getTitleSearch(barea, btar);
+
+                    if (isGroup) sendGroup(group, user, res);
+                    else sendPrivate(user, res);
+                    return true;
+                }
+                catch
+                {
+
+                }
+            }
             if (msg.EndsWith("区谁在播"))
             {
                 string areaname = msg.Replace("谁在播", "");
@@ -405,19 +415,10 @@ namespace Native.Csharp.App.Event
                 else sendPrivate(user, xnq);
                 return true;
             }
-            if (msg.Contains("在播吗"))
+            if (msg.Contains("在播吗") || msg.Contains("播了吗"))
             {
-                string test = msg.Replace("在播吗", "");
-                log(test);
-                string res = bilibili.getLiveInfo(test);
-                if (isGroup) sendGroup(group, user, res);
-                else sendPrivate(user, res);
-                return true;
-            }
-            if (msg.Contains("播了吗"))
-            {
-                string test = msg.Replace("播了吗", "");
-                log(test);
+                string test = msg.Replace("在播吗", "").Replace("播了吗", "");
+                //log(test);
                 string res = bilibili.getLiveInfo(test);
                 if (isGroup) sendGroup(group, user, res);
                 else sendPrivate(user, res);
@@ -956,12 +957,11 @@ namespace Native.Csharp.App.Event
             if (mmdk.config.useGroupMsgBuf)
             {
                 msg = "\r\n" + msg;
-                for (int i = 0; i < 55; i++)    // 33  54
+                for (int i = 0; i < 54; i++)    // 33  54
                 {
                     msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
                 }
             }
-
             Common.CqApi.SendGroupMessage(group, msg);
         }
 

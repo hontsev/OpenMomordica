@@ -34,6 +34,7 @@ namespace Native.Csharp.App.Actors
                         try
                         {
                             dicenum = int.Parse(result.Groups[1].ToString());
+                            if (dicenum > 100) dicenum = 100;
                         }
                         catch { }
                         try
@@ -59,7 +60,7 @@ namespace Native.Csharp.App.Actors
         public long getRoll(int faceNum, int DiceNum, out string resdesc)
         {
             long res = 0;
-            List<int> ress = new List<int>();
+            List<long> ress = new List<long>();
             for (int i = 0; i < DiceNum; i++)
             {
                 ress.Add(faceNum > 1 ? rand.Next(faceNum)+1 : 1);

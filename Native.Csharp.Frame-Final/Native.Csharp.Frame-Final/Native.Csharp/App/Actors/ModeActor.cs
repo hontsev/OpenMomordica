@@ -10,11 +10,21 @@ using static Native.Csharp.App.Event.MomordicaMain;
 
 namespace Native.Csharp.App.Actors
 {
+    class ModeInfo
+    {
+        public string name;
+        public int minSentenceNum;
+        public int maxSentenceNum;
+        public int minWordNum;
+        public int maxWordNum;
+       // public int 
+    }
     class ModeActor
     {
         string path = "";
         string modeIndexName = "_index.txt";
         string modeSgnName = "_sgn.txt";
+        string modeSgnOverName = "_sgnover.txt";
         string modePrivateName = "_mode_private.txt";
         string modeGroupName = "_mode_group.txt";
         string defaultAnswerName = "_defaultanswer.txt";
@@ -22,6 +32,7 @@ namespace Native.Csharp.App.Actors
 
         public Dictionary<string, List<string>> modedict = new Dictionary<string, List<string>>();
         List<string> sgn = new List<string>();
+        List<string> sgnover = new List<string>();
         List<string> defaultAnswers = new List<string>();
         public Dictionary<long, string> privatemode = new Dictionary<long, string>();
         public Dictionary<long, string> groupmode = new Dictionary<long, string>();
@@ -67,14 +78,27 @@ namespace Native.Csharp.App.Actors
                 List<string> modelines = FileIOActor.readLines(path + modeIndexName).ToList();
                 foreach (var line in modelines)
                 {
-                    string modename = line.Trim();
-                    string file = $"{path}\\{modename}.txt";
-                    modedict[modename] = FileIOActor.readLines(file).ToList();
+                    var items = line.Split('\t');
+                    string modeName = items[0].Trim();
+                    if (items.Length >= 2)
+                    {
+                        string modeConfigs = items[1].Trim();  
+                    }
+                    else
+                    {
+
+                    }
+                    string file = $"{path}\\{modeName}.txt";
+                    modedict[modeName] = FileIOActor.readLines(file).ToList();
                 }
 
                 // sgn
                 sgn = FileIOActor.readLines(path + modeSgnName).ToList();
                 sgn.Add("\r\n");
+
+                // sgn over
+                sgnover = FileIOActor.readLines(path + modeSgnOverName).ToList();
+                sgnover.Add("\r\n");
 
                 // group mode config
                 groupmode = new Dictionary<long, string>();
@@ -231,13 +255,13 @@ namespace Native.Csharp.App.Actors
             if (modeExist(mode))
             {
                 //byte[] md5data = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
-                int sentencemaxnum = 6;
+                int sentencemaxnum = 5;
                 int sentencemaxlen = 7;
                 int sentencemaxwordnum = 4;
 
                 int sentences = rand.Next(sentencemaxnum);
 
-                for (int i = 0; i < sentences; i++)
+                for (int i = 0; i <= sentences; i++)
                 {
                     int thislen = rand.Next(1, sentencemaxlen);
                     StringBuilder thissentence = new StringBuilder();
@@ -253,14 +277,14 @@ namespace Native.Csharp.App.Actors
                         if (noSgnModes.Contains(mode)) thissentence.Append(" ");
                         else thissentence.Append("，");
                         result += thissentence.ToString();
-                        if (result.Length > 0 && !noSgnModes.Contains(mode)) result = result.Substring(0, result.Length - 1) + "。";
+                        if (result.Length > 0 && !noSgnModes.Contains(mode)) result = result.Substring(0, result.Length - 1) + sgnover[rand.Next(sgnover.Count)];
                     }
                     else
                     {
                         result += thissentence.ToString();
                     }
                 }
-                if (string.IsNullOrWhiteSpace(result)) result = sgn[rand.Next(sgn.Count)];
+                if (string.IsNullOrWhiteSpace(result)) result = sgnover[rand.Next(sgnover.Count)];
                
             }
             return result;

@@ -21,7 +21,7 @@ namespace Native.Csharp.App.Actors
         Dictionary<string, string> ctlist = new Dictionary<string, string>();
 
 
-        public const string TranslateURL = "http://translate.google.cn/translate_a/single?client=gtx&dt=t&ie=UTF-8&oe=UTF-8&sl=auto&tl=zh-CN";
+        public const string TranslateURL = "https://translate.google.cn/translate_a/single?client=gtx&dt=t&ie=UTF-8&oe=UTF-8&sl=auto&tl=zh-CN";
 
         private Regex regex = new Regex("(?<=\\[\\\").*?(?=\\\")");
         //替换掉翻译结果中的id
@@ -61,7 +61,7 @@ namespace Native.Csharp.App.Actors
             else if (ctlist.ContainsKey(to + "文")) tn = ctlist[to + "文"];
             else if (ctlist.ContainsKey(to + "语")) tn = ctlist[to + "语"];
 
-            return $"http://translate.google.cn/translate_a/single?client=gtx&dt=t&ie=UTF-8&oe=UTF-8&sl={fn}&tl={tn}";
+            return $"https://translate.google.cn/translate_a/single?client=gtx&dt=t&ie=UTF-8&oe=UTF-8&sl={fn}&tl={tn}";
 
         }
 
@@ -76,10 +76,10 @@ namespace Native.Csharp.App.Actors
             InitTkk();
             string tk = GetTK(src);
             string url = $"{getTranslateUrl(from, to)}&tk={tk}&q={UrlEncode(src)}";
-            FileIOActor.log(url);
+            //FileIOActor.log(url);
             //return url;
             string httpresult = WebConnectActor.getData(url, Encoding.UTF8);
-            FileIOActor.log(httpresult);
+            //FileIOActor.log(httpresult);
             try
             {
                 string res = "";
