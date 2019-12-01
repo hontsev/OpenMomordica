@@ -514,6 +514,24 @@ namespace Native.Csharp.App.Event
                 catch { }
             }
 
+            // 攻受
+            Regex qz = new Regex("(.+)谴责(.+)的(.+)");
+            var matchqz = qz.Match(msg);
+            if (matchqz.Success)
+            {
+                try
+                {
+                    string res = modes.getQianze(matchqz.Groups[1].ToString(), matchqz.Groups[2].ToString(), matchqz.Groups[3].ToString());
+                    if (res.Length > 0)
+                    {
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+                catch { }
+            }
+
             // BTC货币系统
             if (isGroup && msg == "签到")
             {

@@ -52,6 +52,10 @@ namespace Native.Csharp.App.Actors
         string gongshouName = "gongshou.txt";
         List<string> gongshou = new List<string>();
 
+        string qianzeName = "gengshuang.txt";
+        List<string> qianze1 = new List<string>();
+        List<string> qianze2 = new List<string>();
+
         string penName = "pen.txt";
         List<string> penlist = new List<string>();
 
@@ -154,6 +158,28 @@ namespace Native.Csharp.App.Actors
                     }
                 }
                 if (!string.IsNullOrWhiteSpace(thistmp)) gongshou.Add(thistmp);
+
+                // qianze
+                qianze1 = new List<string>();
+                qianze2 = new List<string>();
+                int pos = 0;
+                res = FileIOActor.readLines(path + qianzeName, Encoding.UTF8);
+                foreach(var line in res)
+                {
+                    if (line.Trim().StartsWith("#1"))
+                    {
+                        pos = 1;
+                        continue;
+                    }
+                    else if (line.Trim().StartsWith("#2"))
+                    {
+                        pos = 2;
+                        continue;
+                    }
+
+                    if (pos == 1) qianze1.Add(line.Trim());
+                    else if (pos == 2) qianze2.Add(line.Trim());
+                }
 
                 // pen
                 penlist = FileIOActor.readLines(path + penName, Encoding.UTF8).ToList();
@@ -362,6 +388,40 @@ namespace Native.Csharp.App.Actors
 
             return result;
         }
+
+        public string getQianze(string mine, string character, string action)
+        {
+            string result = "";
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(mine) && !string.IsNullOrWhiteSpace(character) && !string.IsNullOrWhiteSpace(action) && qianze1.Count > 0 && qianze2.Count > 0)
+                {
+                    // begin
+                    result += $"记者：{character}{action}，{mine}对此有何回应？\r\n";
+                    result += $"苦瓜：";
+                    // #1
+                    result += $"{qianze1[rand.Next(qianze1.Count)]}";
+                    // #2
+                    List<int> indexs = new List<int>();
+                    for (int i = 0; i < qianze2.Count; i++) indexs.Add(i);
+                    for (int i = 0; i < rand.Next(3, 6); i++)
+                    {
+                        int get = rand.Next(indexs.Count);
+                        result += $"{qianze2[indexs[get]]}";
+                        indexs.RemoveAt(get);
+                    }
+                    result = result.Replace("#M", mine).Replace("#N", character).Replace("#B", action);
+                }
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return result;
+        }
+
 
         public string getPen(long group, long user)
         {
