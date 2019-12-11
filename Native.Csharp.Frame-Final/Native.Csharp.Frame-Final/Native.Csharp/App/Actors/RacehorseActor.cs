@@ -11,11 +11,11 @@ namespace Native.Csharp.App.Actors
     class RHUserInfo
     {
         public BTCUser user;
-        public int hrmoney;
+        public long hrmoney;
         public int wintime;
         public int losetime;
 
-        public RHUserInfo(BTCUser _user, int _hrmoney, int _wintime, int _losetime)
+        public RHUserInfo(BTCUser _user, long _hrmoney, int _wintime, int _losetime)
         {
             user = _user;
             hrmoney = _hrmoney;
@@ -115,7 +115,7 @@ namespace Native.Csharp.App.Actors
         getQQNickHandler getQQNick;
         public sendQQGroupMsgHandler showScene;
 
-        public Dictionary<RHUserInfo, Dictionary<int, int>> bets = new Dictionary<RHUserInfo, Dictionary<int, int>>();
+        public Dictionary<RHUserInfo, Dictionary<int, long>> bets = new Dictionary<RHUserInfo, Dictionary<int, long>>();
         public Dictionary<int, Road> roads = new Dictionary<int, Road>();
 
         public long id;  //用qq群号作为比赛唯一标识，避免同一个群同时多局
@@ -168,12 +168,12 @@ namespace Native.Csharp.App.Actors
             }
         }
 
-        public string bet(RHUserInfo _user, int _roadnum, int _money)
+        public string bet(RHUserInfo _user, int _roadnum, long _money)
         {
             if (status != 1 || _money<=0) return "";
             if (!bets.ContainsKey(_user))
             {
-                bets[_user] = new Dictionary<int, int>();
+                bets[_user] = new Dictionary<int, long>();
             }
             if(_roadnum<=0 || _roadnum > roadnum)
             {
@@ -296,12 +296,12 @@ namespace Native.Csharp.App.Actors
         {
             StringBuilder sb = new StringBuilder();
 
-            int allmoney = 0;
+            long allmoney = 0;
             foreach (var bet in bets.Values) foreach (var money in bet.Values) allmoney += money;
             List<RHUserInfo> winners = new List<RHUserInfo>();
             double pl = RacehorseActor.rand.Next(1000, 6666);
-            int othermoneys = 0;
-            int winnermoneys = 0;
+            long othermoneys = 0;
+            long winnermoneys = 0;
             foreach (var bet in bets)
             {
                 bool win = false;
@@ -756,11 +756,13 @@ namespace Native.Csharp.App.Actors
             //save();
         }
 
-        public void showMyRHInfo(long group, long userqq)
+        
+        public string getRHInfo(long group, long userqq)
         {
             if (!ruuserinfo.ContainsKey(userqq)) ruuserinfo[userqq] = new RHUserInfo(btc.get(userqq), 0, 0, 0);
             var u = ruuserinfo[userqq];
-            outputMessage(group, userqq, $"您的账上有{u.user.money}枚比特币，在赌马上消费过{u.hrmoney}枚比特币，共下注{u.losetime+u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%");
+            return $"您在赌马上消费过{u.hrmoney}枚比特币，共下注{u.losetime + u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%";
+            //outputMessage(group, userqq, $"您在赌马上消费过{u.hrmoney}枚比特币，共下注{u.losetime+u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%");
             // save();
         }
     }

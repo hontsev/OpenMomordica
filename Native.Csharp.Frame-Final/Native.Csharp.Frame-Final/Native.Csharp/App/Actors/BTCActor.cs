@@ -50,7 +50,7 @@ namespace Native.Csharp.App.Actors
                 {
                     try
                     {
-                        BTCUser u = new BTCUser(long.Parse(items[0]), int.Parse(items[1]));
+                        BTCUser u = new BTCUser(long.Parse(items[0]), long.Parse(items[1]));
                         users[items[0]]=u;
                     }
                     catch (Exception ex)
@@ -149,11 +149,36 @@ namespace Native.Csharp.App.Actors
             }
         }
 
-        public void addMoney(long group, long userqq, int money)
+        public void addMoney(long group, long userqq, long money)
         {
             var user = get(userqq);
             user.money += money;
             save();
+        }
+
+        public string transMoney(long fromqq, long targetqq, long money)
+        {
+            var user1 = get(fromqq);
+            var user2 = get(targetqq);
+            if(user1==null || user2 == null)
+            {
+                return $"用户{targetqq}没有比特币账户";
+            }
+            if (user1.money < money)
+            {
+                return $"您的余额不足。当前余额{user1.money}比特币";
+            }
+            try
+            {
+                user1.money -= money;
+                user2.money += money;
+                save();
+                return $"您向{user2.qq}成功转账{money}元。余额{user1.money}比特币";
+            }
+            catch
+            {
+                return $"转账系统被橄榄了，你钱没了！请联系bot作者";
+            }
         }
 
         public string getUserInfo(long userqq)
@@ -166,11 +191,11 @@ namespace Native.Csharp.App.Actors
     class BTCUser
     {
         public long qq;
-        public int money;
+        public long money;
         public Benefit benefit;
 
 
-        public BTCUser(long _qq, int _money = 0)
+        public BTCUser(long _qq, long _money = 0)
         {
             qq = _qq;
             money = _money;

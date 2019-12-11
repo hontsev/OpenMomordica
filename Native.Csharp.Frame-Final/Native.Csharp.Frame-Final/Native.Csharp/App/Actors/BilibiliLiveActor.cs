@@ -35,6 +35,8 @@ namespace Native.Csharp.App.Actors
         Dictionary<string, string> roomDict = new Dictionary<string, string>();
         Dictionary<string, int[]> areas = new Dictionary<string, int[]>();
 
+        string shiquName = "shiqu.txt";
+        Dictionary<double, string[]> shiqus = new Dictionary<double, string[]>();
         public BilibiliLiveActor()
         {
 
@@ -79,8 +81,33 @@ namespace Native.Csharp.App.Actors
                     catch { }
                 }
             }
+
+            var lines4 = FileIOActor.readLines(path + shiquName);
+            foreach (var line in lines4)
+            {
+                var items1 = line.Trim().Split(':');
+                if (items1.Length == 2)
+                {
+                    var items2 = items1[1].Split('\t');
+                    shiqus[double.Parse(items1[0])] = items2;
+                }
+            }
         }
 
+        public string getNowClockCountry(int time)
+        {
+            Random rand = new Random((int)DateTime.Now.Ticks);
+            string res = "";
+           
+            DateTime nowd = DateTime.UtcNow;
+            int hourdiff = time - nowd.Hour;
+            if (hourdiff < -12) hourdiff += 24;
+            else if (hourdiff > 12) hourdiff -= 24;
+            res += shiqus[hourdiff][rand.Next(shiqus[hourdiff].Length)];
+            res += $"时间{time.ToString().PadLeft(2, '0')}:{nowd.ToString("mm:ss")}";
+
+            return res;
+        }
         public void saveRooms(List<LiveInfo> infos)
         {
             try

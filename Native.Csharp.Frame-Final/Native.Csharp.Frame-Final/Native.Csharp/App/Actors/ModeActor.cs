@@ -5,34 +5,106 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using static Native.Csharp.App.Event.MomordicaMain;
 
 namespace Native.Csharp.App.Actors
 {
     class ModeInfo
     {
+        Random rand = new Random((int)DateTime.Now.Ticks);
         public string name;
-        public int minSentenceNum;
-        public int maxSentenceNum;
-        public int minWordNum;
-        public int maxWordNum;
-       // public int 
+        List<string> config;
+        List<string> sentences;
+        // public int 
+        public ModeInfo()
+        {
+            config = new List<string>();
+            sentences = new List<string>();
+        }
+
+        public ModeInfo(string _name, ICollection<string> _config, ICollection<string> _sentences)
+        {
+            name = _name;
+            config = _config.ToList();
+            sentences = _sentences.ToList();
+        }
+
+        public string getRandomSentence(string seed = "")
+        {
+
+            int maxsnum = 5;
+            int maxslen = 7;
+            int maxwordnum = 4;
+
+            if (config.Contains("单句"))
+            {
+                maxslen = 1;
+                maxwordnum = 1;
+                maxsnum = 1;
+            }
+            if (config.Contains("句内不拼接"))
+            {
+                maxwordnum = 1;
+                maxslen = 1;
+            }
+
+
+            string result = "";
+            //byte[] md5data = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
+            string[] sgn1 = new string[] { ",", "，", "；", "、" };
+            string[] sgn2 = new string[] { "\r\n", "。", "。", "。", "？", "！", "…","——" };
+            string[] sgn3 = new string[] { "\r\n", "。", "？", "！", "…", "——","??","...","：","?!","???","!!","！！！" };
+
+            int sn = rand.Next(1, maxsnum);
+
+            for (int i = 0; i < sn; i++)
+            {
+                int thislen = rand.Next(1, maxslen);
+                StringBuilder thissentence = new StringBuilder();
+                int wordnum = 0;
+                while (thissentence.Length < thislen && wordnum < maxwordnum)
+                {
+                    wordnum++;
+                    thissentence.Append(sentences[rand.Next(0, sentences.Count - 1)]);
+                }
+                if (thissentence.Length > 0 && !sgn1.Contains(thissentence.ToString().Last().ToString()) && !sgn2.Contains(thissentence.ToString().Last().ToString()))
+                {
+                    if (config.Contains("无标点")) thissentence.Append(" ");
+                    else thissentence.Append(sgn1[rand.Next(sgn1.Length)]);
+                    result += thissentence.ToString();
+                    if (result.Length > 0)
+                    {
+                        if (config.Contains("无标点")) ;
+                        else if(config.Contains("乱打标点"))result = result.Substring(0, result.Length - 1) + sgn3[rand.Next(sgn3.Length)];
+                        else result = result.Substring(0, result.Length - 1) + sgn2[rand.Next(sgn2.Length)];
+                    }
+                        
+                }
+                else
+                {
+                    result += thissentence.ToString();
+                }
+            }
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                if (config.Contains("无标点")) result = " ";
+                else if (config.Contains("乱打标点")) result = result.Substring(0, result.Length - 1) + sgn3[rand.Next(sgn3.Length)];
+                else result = result.Substring(0, result.Length - 1) + sgn2[rand.Next(sgn2.Length)];
+            }
+
+
+            return result;
+        }
     }
     class ModeActor
     {
         string path = "";
         string modeIndexName = "_index.txt";
-        string modeSgnName = "_sgn.txt";
-        string modeSgnOverName = "_sgnover.txt";
         string modePrivateName = "_mode_private.txt";
         string modeGroupName = "_mode_group.txt";
         string defaultAnswerName = "_defaultanswer.txt";
-        
 
-        public Dictionary<string, List<string>> modedict = new Dictionary<string, List<string>>();
-        List<string> sgn = new List<string>();
-        List<string> sgnover = new List<string>();
+        public Dictionary<string, ModeInfo> modedict = new Dictionary<string, ModeInfo>();
         List<string> defaultAnswers = new List<string>();
         public Dictionary<long, string> privatemode = new Dictionary<long, string>();
         public Dictionary<long, string> groupmode = new Dictionary<long, string>();
@@ -56,6 +128,12 @@ namespace Native.Csharp.App.Actors
         List<string> qianze1 = new List<string>();
         List<string> qianze2 = new List<string>();
 
+        string jokeName = "jokes.txt";
+        List<string> jokes = new List<string>();
+        List<string> jokesEvent = new List<string>();
+        List<string> jokesOrg = new List<string>();
+        List<string> jokesEnemy = new List<string>();
+
         string penName = "pen.txt";
         List<string> penlist = new List<string>();
 
@@ -78,32 +156,33 @@ namespace Native.Csharp.App.Actors
                 outputMessage = _outputMessage;
                 this.path = path;
                 // load modes
-                modedict = new Dictionary<string, List<string>>();
+                modedict = new Dictionary<string, ModeInfo>();
                 List<string> modelines = FileIOActor.readLines(path + modeIndexName).ToList();
                 foreach (var line in modelines)
                 {
                     var items = line.Split('\t');
                     string modeName = items[0].Trim();
-                    if (items.Length >= 2)
+                    try
                     {
-                        string modeConfigs = items[1].Trim();  
-                    }
-                    else
-                    {
+                        string[] modeConfigs;
+                        if (items.Length >= 2)
+                        {
+                            modeConfigs = items[1].Trim().Split(new char[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
 
+                        }
+                        else
+                        {
+                            modeConfigs = new string[1] { "默认" };
+                        }
+                        modedict[modeName] = new ModeInfo(modeName, modeConfigs, FileIOActor.readLines($"{path}\\{modeName}.txt").ToList());
                     }
-                    string file = $"{path}\\{modeName}.txt";
-                    modedict[modeName] = FileIOActor.readLines(file).ToList();
+                    catch(Exception ex)
+                    {
+                        FileIOActor.log($"模式行[ {line} ]加载失败，{ex.Message}\r\n{ex.StackTrace}");
+                    }
                 }
 
-                // sgn
-                sgn = FileIOActor.readLines(path + modeSgnName).ToList();
-                sgn.Add("\r\n");
-
-                // sgn over
-                sgnover = FileIOActor.readLines(path + modeSgnOverName).ToList();
-                sgnover.Add("\r\n");
-
+            
                 // group mode config
                 groupmode = new Dictionary<long, string>();
                 List<string> grouplines = FileIOActor.readLines(path + modeGroupName).ToList();
@@ -179,6 +258,34 @@ namespace Native.Csharp.App.Actors
 
                     if (pos == 1) qianze1.Add(line.Trim());
                     else if (pos == 2) qianze2.Add(line.Trim());
+                }
+
+                // joke
+                jokes = new List<string>();
+                jokesOrg = new List<string>();
+                jokesEvent = new List<string>();
+                jokesEnemy = new List<string>();
+                res = FileIOActor.readLines(path + jokeName, Encoding.UTF8);
+                string tmpline = "";
+                foreach (var line in res)
+                {
+                    if (line.Trim().StartsWith("#"))
+                    {
+                        if (!string.IsNullOrEmpty(tmpline))
+                        {
+                            bool find = false;
+                            if (tmpline.Contains("【部门】")) { jokesOrg.Add(tmpline);find = true; }
+                            if (tmpline.Contains("【事件】")) { jokesEvent.Add(tmpline);find = true; }
+                            if (tmpline.Contains("【敌国】")) { jokesEnemy.Add(tmpline); find = true; }
+                            if(!find)jokes.Add(tmpline);
+                        }
+                        tmpline = "";
+                        continue;
+                    }
+                    else
+                    {
+                        tmpline += $"{line.Trim()}\r\n";
+                    }
                 }
 
                 // pen
@@ -277,43 +384,11 @@ namespace Native.Csharp.App.Actors
         /// <returns></returns>
         public string getAnswerWithMode(long user, string question, string mode)
         {
-            string result = "";
-            if (modeExist(mode))
+            if (modedict.ContainsKey(mode))
             {
-                //byte[] md5data = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
-                int sentencemaxnum = 5;
-                int sentencemaxlen = 7;
-                int sentencemaxwordnum = 4;
-
-                int sentences = rand.Next(sentencemaxnum);
-
-                for (int i = 0; i <= sentences; i++)
-                {
-                    int thislen = rand.Next(1, sentencemaxlen);
-                    StringBuilder thissentence = new StringBuilder();
-                    int wordnum = 0;
-                    while (thissentence.Length < thislen && wordnum < sentencemaxwordnum)
-                    {
-                        wordnum++;
-                        thissentence.Append(modedict[mode][rand.Next(0, modedict[mode].Count - 1)]);
-                    }
-                    if (thissentence.Length > 0 && !sgn.Contains(thissentence.ToString().Last().ToString()))
-                    {
-                        string[] noSgnModes = new string[] { "佛", "emoji" };
-                        if (noSgnModes.Contains(mode)) thissentence.Append(" ");
-                        else thissentence.Append("，");
-                        result += thissentence.ToString();
-                        if (result.Length > 0 && !noSgnModes.Contains(mode)) result = result.Substring(0, result.Length - 1) + sgnover[rand.Next(sgnover.Count)];
-                    }
-                    else
-                    {
-                        result += thissentence.ToString();
-                    }
-                }
-                if (string.IsNullOrWhiteSpace(result)) result = sgnover[rand.Next(sgnover.Count)];
-               
+                return modedict[mode].getRandomSentence(question);
             }
-            return result;
+            return "";
         }
 
 
@@ -325,6 +400,7 @@ namespace Native.Csharp.App.Actors
         /// <returns></returns>
         string getChaosRandomSentence(string str)
         {
+            string[] sgn = new string[] { "\r\n", "。", "？", "！", "…", "——", "??", "...", "：", "?!", "???", "!!", "！！！" };
             string result = "";
             byte[] md5data = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
             int sentences = rand.Next(1, 6);
@@ -346,7 +422,7 @@ namespace Native.Csharp.App.Actors
                         thissentence.Append(chaosXwb[rand.Next(0, chaosXwb.Count - 1)]);
                     }
                 }
-                thissentence.Append(sgn[rand.Next(0, sgn.Count - 1)]);
+                thissentence.Append(sgn[rand.Next(sgn.Length)]);
                 result += thissentence.ToString();
             }
 
@@ -382,6 +458,45 @@ namespace Native.Csharp.App.Actors
                 }
             }
             catch(Exception ex)
+            {
+                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return result;
+        }
+
+        public string getJoke(Dictionary<string,string> pairs)
+        {
+            string result = "";
+
+            try
+            {
+                List<string> usingjokes = new List<string>();
+                if (pairs.ContainsKey("敌国")) usingjokes.AddRange(jokesEnemy);
+                if (pairs.ContainsKey("部门")) usingjokes.AddRange(jokesOrg);
+                if (pairs.ContainsKey("事件")) usingjokes.AddRange(jokesEvent);
+                if (usingjokes.Count <= 0) usingjokes.AddRange(jokes);
+                int find = 100;
+                int index = rand.Next(usingjokes.Count);
+                do
+                {
+                    result = usingjokes[index];
+                    foreach(var pair in pairs)
+                    {
+                        result = result.Replace($"【{pair.Key}】", pair.Value);
+                    }
+                    if (result.Contains("【"))
+                    {
+                        index = (index + 1) % usingjokes.Count;
+                        find -= 1;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                } while (find >= 0);
+            }
+            catch (Exception ex)
             {
                 FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
             }

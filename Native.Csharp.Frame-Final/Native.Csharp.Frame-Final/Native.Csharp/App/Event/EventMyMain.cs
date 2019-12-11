@@ -21,24 +21,22 @@ namespace Native.Csharp.App.Event
         public delegate void sendQQPrivateMsgHandler(long targetUser, string msg);
         public delegate void sendQQGroupMsgHandler(long group, long targetUser, string msg);
         public delegate string getQQNickHandler(long qq);
+        public delegate string getQQNickFromGroupHandler(long group, long qq);
+        public delegate long getQQNumFromGroupHandler(long group, string nick);
         public delegate long getQQGroupNumber();
 
         public sendStringHandler log;
         public sendQQPrivateMsgHandler sendPrivate;
         public sendQQGroupMsgHandler sendGroup;
         public getQQNickHandler getQQNick;
+        public getQQNickFromGroupHandler getQQNickFromGroup;
+        public getQQNumFromGroupHandler getQQNumFromGroup;
         public getQQGroupNumber getQQGroupNum;
 
         private static MomordicaMain _mmdk;
 
-
         public string rootDict;         // 资源根目录
-        string asknameFile = "askname.txt";
-        string configFile = "config.txt";
         string historyPath = "_history\\";
-        string groupBlacklistFile = "group_blacklist.txt";
-        string groupWhitelistFile = "group_whitelist.txt";
-        string userBlacklistFile = "user_blacklist.txt";
         string DataBaiduPath = "\\DataBaidu\\";
         string DataProofPath = "\\DataProof\\";
         string DataWeatherPath = "\\DataWeather\\";
@@ -52,12 +50,6 @@ namespace Native.Csharp.App.Event
         bool inited = false;
         object dealmsgMutex = new object();
         object savemsgMutex = new object();
-        object userblackMutex = new object();
-
-        Dictionary<long, long> userBlacklist = new Dictionary<long, long>();
-        Dictionary<long, long> groupBlacklist = new Dictionary<long, long>();
-        Dictionary<long, long> groupWhitelist = new Dictionary<long, long>();
-        List<string> askname = new List<string>();
 
         public Configs config = new Configs();
         BaiduSearchActor baidu = new BaiduSearchActor();
@@ -105,30 +97,10 @@ namespace Native.Csharp.App.Event
                         weather.init(rootDict + DataWeatherPath);
                         bilibili.init(rootDict + DataBilibiliPath);
                         racehorse.init(sendGroup, getQQNick, btc, rootDict + DataRacehorsePath);
-                        config.init(rootDict + configFile);
+                        config.init(rootDict + "\\");
                         trans.init(rootDict + DataGoogleTransPath);
                         divi.init(rootDict + DataDivinationPath);
 
-                        userBlacklist = new Dictionary<long, long>();
-                        groupBlacklist = new Dictionary<long, long>();
-                        groupWhitelist = new Dictionary<long, long>();
-                        List<string> userblacklistlines = FileIOActor.readLines(rootDict + userBlacklistFile).ToList();
-                        foreach (var line in userblacklistlines)
-                        {
-                            var uitem = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                            if (uitem.Length >= 2) userBlacklist[long.Parse(uitem[0])] = long.Parse(uitem[1]);
-                        }
-                        List<string> groupblacklistlines = FileIOActor.readLines(rootDict + groupBlacklistFile).ToList();
-                        foreach (var line in groupblacklistlines)
-                        {
-                            groupBlacklist[long.Parse(line)] = 0;
-                        }
-                        List<string> groupwhitelistlines = FileIOActor.readLines(rootDict + groupWhitelistFile).ToList();
-                        foreach (var line in groupwhitelistlines)
-                        {
-                            groupWhitelist[long.Parse(line)] = 0;
-                        }
-                        askname = FileIOActor.readLines(rootDict + asknameFile).ToList();
                         inited = true;
 
                     }
@@ -151,29 +123,29 @@ namespace Native.Csharp.App.Event
         /// <returns>是否已按照指令进行了处理</returns>
         bool dealCmd(long group, long user, string msg)
         {
-            if (user == config.masterQQ)
-            {
-                // super admin
-                if (msg.Contains("remove "))
-                {
-                    string userstr = msg.Replace("remove ", "").Trim();
-                    //Common.CqApi.AddLoger(Sdk.Cqp.Enum.LogerLevel.Info, "test", userstr);
-                    long userqq = 0;
-                    long.TryParse(userstr, out userqq);
-                    if (userqq != 0 && !userBlacklist.Keys.Contains(userqq))
-                    {
-                        try
-                        {
-                            userBlacklist[userqq] = 0;
-                            sendGroup(group, user, $"~好，我立即屏蔽{userqq}~");
-                            File.AppendAllText(rootDict + "\\ignoreuser.txt", $"{userqq}\t{userBlacklist[userqq]}\r\n");
+            //if (user == config.masterQQ)
+            //{
+            //    // super admin
+            //    if (msg.Contains("remove "))
+            //    {
+            //        string userstr = msg.Replace("remove ", "").Trim();
+            //        //Common.CqApi.AddLoger(Sdk.Cqp.Enum.LogerLevel.Info, "test", userstr);
+            //        long userqq = 0;
+            //        long.TryParse(userstr, out userqq);
+            //        if (userqq != 0 && !userBlacklist.Keys.Contains(userqq))
+            //        {
+            //            try
+            //            {
+            //                userBlacklist[userqq] = 0;
+            //                sendGroup(group, user, $"~好，我立即屏蔽{userqq}~");
+            //                File.AppendAllText(rootDict + "\\ignoreuser.txt", $"{userqq}\t{userBlacklist[userqq]}\r\n");
 
-                        }
-                        catch { }
-                        return true;
-                    }
-                }
-            }
+            //            }
+            //            catch { }
+            //            return true;
+            //        }
+            //    }
+            //}
 
             bool isGroup = (group <= 0) ? false : true;
             msg = msg.Trim();
@@ -205,7 +177,7 @@ namespace Native.Csharp.App.Event
                     if (swit == "off") mode = "正常";
                     if (!modes.modedict.ContainsKey(mode))
                     {
-                        if (group == config.testGroup && (mode == "测试" || mode == "喷人"))
+                        if (config.groupIs(group, "测试") && (mode == "测试" || mode == "喷人"))
                         {
                             // pass
                         }
@@ -275,36 +247,68 @@ namespace Native.Csharp.App.Event
             }
 
             // 功能介绍
-            if (new string[] { "功能", "选项", "设置", "帮助", "配置", "设定", "菜单" }.Contains(msg))
+            if (new string[] { "用法", "介绍", "功能", "选项", "设置", "帮助", "配置", "设定", "菜单" }.Contains(msg))
             {
                 if (isGroup) sendGroup(group, -1, getWelcomeString());
                 else sendPrivate(user, getWelcomeString());
                 return true;
             }
 
+            if (msg.StartsWith("设置") && config.personIs(user, "管理员"))
+            {
+                string cmd = msg.Substring(2);
+                try
+                {
+                    //if (cmd == "重发欢迎消息")
+                    //{
+                    //    var groups = Directory.GetFiles(rootDict + historyPath + "group\\", "*.txt");
+                    //    foreach(var g in groups)
+                    //    {
+                    //        if(new FileInfo(g).Length > 1024 * 4)
+                    //        {
+                    //            long gnum = long.Parse(Path.GetFileNameWithoutExtension(g));
+                    //            sendGroup(gnum, -1, getWelcomeString());
+                    //        }
+
+                    //    }
+
+                    //    //var users = Directory.GetFiles(rootDict + historyPath + "private\\", "*.txt");
+                    //    //foreach (var g in groups)
+                    //    //{
+                    //    //    long gnum = long.Parse(Path.GetFileNameWithoutExtension(g));
+                    //    //    sendGroup(gnum, -1, getWelcomeString());
+                    //    //}
+                    //}
+                }
+                catch
+                {
+
+                }
+            }
+
             if (msg == "状态")
             {
                 string rmsg = "";
-                rmsg += "亲父QQ：" + (config.masterQQ) + "\r\n";
-                rmsg += "启动时间：" + config.startTime.ToString("yyyy-MM-dd HH:mm:ss") + " (已运行" + (DateTime.Now - config.startTime).TotalDays.ToString("0.00") + "天)\r\n";
-                rmsg += "拳交马化腾：" + (config.useGroupMsgBuf ? "开启" : "关闭") + "\r\n";
-                rmsg += "赛马时段：" + racehorse.raceBegin.ToString() + "~" + racehorse.raceEnd.ToString() + "\r\n";
-                rmsg += "加了" + getQQGroupNum() + "个群\r\n";
-                rmsg += "在群里被乐" + config.playTimeGroup + "次\r\n";
-                rmsg += "在私聊被乐" + config.playTimePrivate + "次\r\n";
-                if (isGroup) rmsg += "在本群是" + modes.getGroupMode(group) + "模式\r\n";
-                else rmsg += "目前处于" + modes.getUserMode(user) + "模式\r\n";
+                rmsg += $"首次启动时间：{config.startTime.ToString("yyyy-MM-dd HH:mm:ss")}(已运行{(DateTime.Now - config.startTime).TotalDays.ToString("0.00")}天)\r\n";
+                rmsg += $"本次启动时间：{config.thisStartTime.ToString("yyyy-MM-dd HH:mm:ss")}(已运行{(DateTime.Now - config.thisStartTime).TotalDays.ToString("0.00")}天)\r\n";
+                rmsg += $"重启次数：{config.beginTimes}次\r\n";
+                rmsg += $"加了{getQQGroupNum()}个群\r\n";
+                rmsg += $"在群里被乐{ config.playTimeGroup }次\r\n";
+                rmsg += $"在私聊被乐{ config.playTimePrivate }次\r\n";
+                if (isGroup) rmsg += $"在本群的配置是：{(config.groupLevel.ContainsKey(group) ? string.Join("，", config.groupLevel[group]) : "普通群")}\r\n";
+                if (isGroup) rmsg += $"在本群是{ modes.getGroupMode(group)}模式\r\n";
+                else rmsg += $"目前是{modes.getUserMode(user)}模式\r\n";
 
                 if (isGroup) sendGroup(group, -1, rmsg);
                 else sendPrivate(user, rmsg);
                 return true;
             }
-            if (msg == "存档" && user == config.masterQQ)
+            if (msg == "存档" && config.personIs(user, "管理员"))
             {
                 btc.save();
                 racehorse.save();
                 config.save();
-                string rmsg = "好，苦瓜已存档当前状态数据~";
+                string rmsg = "好，已存档";
                 if (isGroup) sendGroup(group, -1, rmsg);
                 else sendPrivate(user, rmsg);
                 return true;
@@ -317,12 +321,12 @@ namespace Native.Csharp.App.Event
                 List<string> qjusers = new List<string> { "807079241", "3345806534" };
                 qjusers.Add(config.masterQQ.ToString());
                 string rmsg = "";
-                if (onMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || group == config.testGroup))
+                if (onMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || config.groupIs(group, "测试")))
                 {
                     config.useGroupMsgBuf = true;
                     rmsg = "开始拳交马化腾";
                 }
-                else if (offMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || group == config.testGroup))
+                else if (offMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || config.groupIs(group, "测试")))
                 {
                     config.useGroupMsgBuf = false;
                     rmsg = "不再拳交马化腾";
@@ -410,7 +414,7 @@ namespace Native.Csharp.App.Event
 
                 }
             }
-            if (msg.EndsWith("区谁在播"))
+            if (msg.EndsWith("区谁在播") || msg.EndsWith("区有谁在播") || msg.EndsWith("区有谁") || msg.EndsWith("区都有谁"))
             {
                 string areaname = msg.Replace("谁在播", "");
                 string xnq = bilibili.getLiveNum(areaname);
@@ -514,14 +518,66 @@ namespace Native.Csharp.App.Event
                 catch { }
             }
 
-            // 攻受
-            Regex qz = new Regex("(.+)谴责(.+)的(.+)");
-            var matchqz = qz.Match(msg);
-            if (matchqz.Success)
+            //// 谴责
+            if (!config.groupIs(group, "测试"))
+            {
+                Regex qz = new Regex("(.+)谴责(.+)的(.+)");
+                var matchqz = qz.Match(msg);
+                if (matchqz.Success)
+                {
+                    try
+                    {
+                        string res = modes.getQianze(matchqz.Groups[1].ToString(), matchqz.Groups[2].ToString(), matchqz.Groups[3].ToString());
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            if (!config.groupIs(group, "温和"))
+            {
+                if (msg.StartsWith("讽刺"))
+                {
+                    string res = "";
+                    try
+                    {
+                        var items = msg.Substring(2).Trim().Split(new char[] { ',', '，' },StringSplitOptions.RemoveEmptyEntries);
+                        if (items.Length >= 1)
+                        {
+                            Dictionary<string, string> pairs = new Dictionary<string, string>();
+                            foreach(var item in items)
+                            {
+                                var pair = item.Split(new char[] { ':', '：', '=', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (pair.Length == 2) pairs[pair[0]] = pair[1];
+                            }
+                            if (pairs.Count > 0)
+                            {
+                                res = modes.getJoke(pairs);
+                            }
+                        }
+                    }
+                    catch { }
+                    if (res.Length > 0)
+                    {
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+            }
+
+
+            // 才八点
+            if(msg.StartsWith("现在几点") || msg.StartsWith("几点了"))
             {
                 try
                 {
-                    string res = modes.getQianze(matchqz.Groups[1].ToString(), matchqz.Groups[2].ToString(), matchqz.Groups[3].ToString());
+                    string res = $"现在是{bilibili.getNowClockCountry(20)}";
                     if (res.Length > 0)
                     {
                         if (isGroup) sendGroup(group, user, res);
@@ -540,6 +596,37 @@ namespace Native.Csharp.App.Event
                 return true;
             }
 
+            Regex zzs = new Regex("给(.+)转(\\d+)");
+            var matchzzs = zzs.Match(msg);
+            if (matchzzs.Success)
+            {
+                try
+                {
+                    string target = matchzzs.Groups[1].ToString();
+                    long targetqq = -1;
+                    if (!long.TryParse(target, out targetqq)) targetqq = getQQNumFromGroup(group, target.Trim());
+                    string res = "";
+                    if (targetqq <= 0)
+                    {
+                        res = $"群里好像没人叫 {target} ，转账失败。";
+                    }
+                    else
+                    {
+                        long money = long.Parse(matchzzs.Groups[2].ToString());
+                        res = btc.transMoney(user, targetqq, money);
+
+                    }
+                    if (res.Length > 0)
+                    {
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+                catch { }
+            }
+
+
             // 占卜
             if (msg.StartsWith("占卜"))
             {
@@ -557,54 +644,63 @@ namespace Native.Csharp.App.Event
             }
 
             // 赛马
-            if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
+            if(!config.groupIs(group, "禁赛马"))
             {
-                sendGroup(group, user, "苦瓜赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”");
-                return true;
-            }
-            if (isGroup && (msg == "赛马" || msg == "賽馬"))
-            {
-                if (group == config.testGroup || racehorse.isAllow(group))
+                if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
                 {
-                    int num = 5;
-                    racehorse.initMatch(group, num);
+                    sendGroup(group, user, "苦瓜赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”");
+                    return true;
                 }
-                else
+                if (isGroup && (msg == "赛马" || msg == "賽馬"))
                 {
-                    //sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+                    if (config.groupIs(group, "测试") || racehorse.isAllow(group))
+                    {
+                        int num = 5;
+                        racehorse.initMatch(group, num);
+                        return true;
+                    }
                 }
-                return true;
+                if (isGroup && (msg == "富豪榜" || msg == "富人榜"))
+                {
+                    racehorse.showRichest(group);
+                    return true;
+                }
+                if (isGroup && msg == "胜率榜")
+                {
+                    racehorse.showBigWinner(group);
+                    return true;
+                }
+                if (isGroup && msg == "穷人榜")
+                {
+                    racehorse.showPoorest(group);
+                    return true;
+                }
+                if (isGroup && msg == "败率榜")
+                {
+                    racehorse.showBigLoser(group);
+                    return true;
+                }
+                if (isGroup && msg == "赌狗榜")
+                {
+                    racehorse.showMostPlayTime(group);
+                    return true;
+                }
             }
-            if (isGroup && (msg == "富豪榜" || msg == "富人榜"))
-            {
-                racehorse.showRichest(group);
-                return true;
-            }
-            if (isGroup && msg == "胜率榜")
-            {
-                racehorse.showBigWinner(group);
-                return true;
-            }
-            if (isGroup && msg == "穷人榜")
-            {
-                racehorse.showPoorest(group);
-                return true;
-            }
-            if (isGroup && msg == "败率榜")
-            {
-                racehorse.showBigLoser(group);
-                return true;
-            }
-            if (isGroup && msg == "赌狗榜")
-            {
-                racehorse.showMostPlayTime(group);
-                return true;
-            }
+            //else
+            //{
+            //    sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+            //}
+            
 
             if (isGroup && msg == "个人信息")
             {
-                racehorse.showMyRHInfo(group, user);
-                return true;
+                string res = $"{btc.getUserInfo(user)}\r\n{racehorse.getRHInfo(group, user)}";
+                if (res.Length > 0)
+                {
+                    if (isGroup) sendGroup(group, user, res);
+                    else sendPrivate(user, res);
+                    return true;
+                }
             }
             if (isGroup)
             {
@@ -687,52 +783,7 @@ namespace Native.Csharp.App.Event
         /// 
 
 
-        /// <summary>
-        /// 判断是否回复特定qq号的消息
-        /// 根据ignore文件内的配置来作判断
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        bool allowuser(long user)
-        {
-            if (DateTime.Now.Minute == 0)
-            {
-                // 整小时，重置互乐次数
-                lock (userblackMutex)
-                {
-                    try
-                    {
-                        userBlacklist = new Dictionary<long, long>();
-                        List<string> userlines = FileIOActor.readLines(rootDict + userBlacklistFile).ToList();
-                        foreach (var line in userlines)
-                        {
-                            var item = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                            if (item.Length >= 2) userBlacklist[long.Parse(item[0])] = long.Parse(item[1]);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
-                    }
-                }
-            }
-
-            if (userBlacklist.Keys.Contains(user))
-            {
-                long lefttime = userBlacklist[user];
-                log(lefttime.ToString());
-                if (lefttime > 0)
-                {
-                    userBlacklist[user] = lefttime - 1;
-                    log(userBlacklist[user].ToString());
-                    return true;
-                }
-                log("igore..");
-                return false;
-            }
-            log("no ignore" + user.ToString());
-            return true;
-        }
+       
 
         /// <summary>
         /// 处理群消息
@@ -745,7 +796,7 @@ namespace Native.Csharp.App.Event
             tryInit();
             saveMsg(group, user, question.Trim());
             if (!askme(ref question)) return;
-            if (!allowuser(user)) return;
+            if (!config.allowuser(user)) return;
             if (dealCmd(group, user, question))
             {
                 config.playTimeGroup += 1;
@@ -777,7 +828,7 @@ namespace Native.Csharp.App.Event
         {
             tryInit();
             saveMsg(0, user, question.Trim());
-            if (!allowuser(user)) return;
+            if (!config.allowuser(user)) return;
             if (user == config.masterQQ)
             {
                 // Common.CqApi.SendPrivateMessage(user, "[CQ: rich, url = https://i.y.qq.com/v8/playsong.html?songid=201243685&amp;source=yqq#wechat_redirect,text=来自QQ音乐的分享 《Lightbreaker》]");
@@ -858,35 +909,33 @@ namespace Native.Csharp.App.Event
         /// <returns></returns>
         bool askme(ref string question)
         {
-            foreach (var name in askname)
+            //Common.CqApi.AddLoger(Sdk.Cqp.Enum.LogerLevel.Info, "name", name);
+            if (question.StartsWith(config.askName))
             {
-                //Common.CqApi.AddLoger(Sdk.Cqp.Enum.LogerLevel.Info, "name", name);
-                if (question.StartsWith(name))
+                question = question.Substring(config.askName.Length).Trim();
+                if (question.StartsWith("，") || question.StartsWith(","))
                 {
-                    question = question.Substring(name.Length).Trim();
-                    if (question.StartsWith("，") || question.StartsWith(","))
-                    {
-                        question = question.Substring(1);
-                    }
-                    int maxnum = 100;
-                    do
-                    {
-                        int begin = question.IndexOf("[CQ:emoji");
-                        if (begin < 0) break;
-                        int end = question.IndexOf("]");
-                        if (end < 0) break;
-                        try
-                        {
-                            question = question.Substring(0, begin) + question.Substring(end + 1);
-                        }
-                        catch
-                        {
-                            break;
-                        }
-                    } while (maxnum-- > 0);
-                    return true;
+                    question = question.Substring(1);
                 }
+                int maxnum = 100;
+                do
+                {
+                    int begin = question.IndexOf("[CQ:emoji");
+                    if (begin < 0) break;
+                    int end = question.IndexOf("]");
+                    if (end < 0) break;
+                    try
+                    {
+                        question = question.Substring(0, begin) + question.Substring(end + 1);
+                    }
+                    catch
+                    {
+                        break;
+                    }
+                } while (maxnum-- > 0);
+                return true;
             }
+
 
             if (question.Contains(ItemParser.CqCode_At(config.myQQ)))
             {
@@ -906,12 +955,21 @@ namespace Native.Csharp.App.Event
         {
             tryInit();
             return "我是苦瓜bot。用法：\r\n" +
-                "~在群里回复：at我或者打字开头加“苦瓜”\r\n" +
-                "~切换模式：输入“xx模式on”\r\n" +
-                "~翻译：输入“翻译xxx”\r\n" +
-                "~天气预报：输入“北京明天天气”\r\n" +
-                "~掷骰：输入“r1d100 xxx”\r\n" +
-                "~数字论证：输入“数字论证xxx”";
+                "~想在群里乐我，就at我或者打字开头加“苦瓜”，再加内容。私聊乐我的话直接发内容。\r\n" +
+                "~以下是常用功能。根据群配置不同，有的功能可能无法提供。\r\n" +
+                "~状态查看：“状态”\r\n" +
+                "~模式更换：“模式列表”、“xx模式on”\r\n" +
+                "~掷骰：“rd 成功率”“r3d10 攻击力”\r\n" +
+                "~多语翻译：“汉译法译俄 xxxx”\r\n" +
+                "~天气预报：“北京明天天气”\r\n" +
+                "~B站直播搜索：“绘画区谁在播”“虚拟区有多少B限”“xxx在播吗”\r\n" +
+                "~赛马：“赛马介绍”“签到”“个人信息”\r\n" +
+                "~生成攻受文：“A攻B受”\r\n" +
+                //"~生成谴责：“A谴责B的C”\r\n" +
+                "~生成笑话：“讽刺 本国=A国，好人=甲，坏人=乙，事件=xx”\r\n" +
+                "~生成随机汉字：“随机5*4”\r\n" +
+                "~周易占卜：“占卜 xxx”\r\n" +
+                "~数字论证：“数字论证xxx”";
         }
     }
 
@@ -945,6 +1003,8 @@ namespace Native.Csharp.App.Event
                     mmdk.sendGroup = sendGroup;
                     mmdk.sendPrivate = sendPrivate;
                     mmdk.getQQNick = getQQNick;
+                    mmdk.getQQNickFromGroup = getQQNickFromGroup;
+                    mmdk.getQQNumFromGroup = getQQNumFromGroup;
                     mmdk.getQQGroupNum = getQQGroupNum;
                     mmdk.tryInit();
 
@@ -968,6 +1028,36 @@ namespace Native.Csharp.App.Event
             catch (Exception e)
             {
                 return qq.ToString();
+            }
+        }
+
+        private string getQQNickFromGroup(long group, long qq)
+        {
+            try
+            {
+                return Common.CqApi.GetMemberInfo(group, qq).Nick;
+            }
+            catch (Exception e)
+            {
+                return qq.ToString();
+            }
+        }
+
+        private long getQQNumFromGroup(long group, string nick)
+        {
+            try
+            {
+                var list = Common.CqApi.GetMemberList(group);
+                foreach(var line in list)
+                {
+                    //log($"user:{line.QQId}  {line.Nick}  {line.Level}");
+                    if (line.Nick.Trim().ToUpper() == nick.Trim().ToUpper()) return line.QQId;
+                }
+                return -1;
+            }
+            catch (Exception e)
+            {
+                return -1;
             }
         }
 
@@ -1027,7 +1117,6 @@ namespace Native.Csharp.App.Event
             {
                 sendPrivate(mmdk.config.masterQQ, ex.Message + "\r\n" + ex.StackTrace);
             }
-
         }
 
         public void ReceiveAddGroupBeInvitee(object sender, CqAddGroupRequestEventArgs e)
