@@ -108,7 +108,7 @@ namespace Native.Csharp.App.Actors
 
             return res;
         }
-        public void saveRooms(List<LiveInfo> infos)
+        public void saveRooms(ICollection<LiveInfo> infos)
         {
             try
             {
@@ -364,6 +364,48 @@ namespace Native.Csharp.App.Actors
             } while (sumindex < sum);
 
             return infos;
+        }
+
+        public string getPoorLives(string areaName)
+        {
+            if (!areas.ContainsKey(areaName))
+            {
+                return $"好像没在b站找到这个分区：" + areaName;
+            }
+            int parea = areas[areaName][0];
+            int area = areas[areaName][1];
+
+            //readRooms(parea,area);
+
+            LiveInfo[] infos = getLiveInfos(parea, area).ToArray();
+            Array.Sort(infos, (LiveInfo info1, LiveInfo info2) => {
+                if (info1.online > info2.online) return 1;
+                else if (info1.online < info2.online) return -1;
+                else return 0;
+            });
+            saveRooms(infos);
+            int sum = infos.Length;
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append($"{areaName}还有{sum}个人播");
+            if (sum > 0)
+            {
+                sb.Append($"\r\n倒数第一是{infos[0].uname}，{infos[0].online}人气，在播{infos[0].title}");
+            }
+            if (sum > 1)
+            {
+                sb.Append($"\r\n倒数第二是{infos[1].uname}，{infos[1].online}人气，在播{infos[1].title}");
+            }
+            if (sum > 2)
+            {
+                sb.Append($"\r\n倒数第三是{infos[2].uname}，{infos[2].online}人气，在播{infos[2].title}");
+            }
+            if (sum <= 0)
+            {
+                sb.Clear();
+                sb.Append($"{areaName}目前无人在播。");
+            }
+            return sb.ToString();
         }
 
         public string getLiveNum(string areaName)

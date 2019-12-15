@@ -140,9 +140,14 @@ namespace Native.Csharp.App.Actors
             else return false;
         }
 
-        public bool personIs(long group, string state)
+        public bool groupIsNot(long group, string state)
         {
-            if (personLevel.ContainsKey(group)) return personLevel[group].Contains(state);
+            return !groupIs(group, state);
+        }
+
+        public bool personIs(long user, string state)
+        {
+            if (personLevel.ContainsKey(user)) return personLevel[user].Contains(state);
             else return false;
         }
 

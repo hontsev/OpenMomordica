@@ -146,7 +146,7 @@ namespace Native.Csharp.App.Actors
         }
 
         /// <summary>
-        /// 模式配置初始化，读取目前各群各人的模式配置，刷新目前苦瓜支持的模式列表
+        /// 模式配置初始化，读取目前各群各人的模式配置，刷新目前支持的模式列表
         /// </summary>
         /// <param name="path"></param>
         public void init(sendQQGroupMsgHandler _outputMessage, string path)
@@ -514,7 +514,7 @@ namespace Native.Csharp.App.Actors
                 {
                     // begin
                     result += $"记者：{character}{action}，{mine}对此有何回应？\r\n";
-                    result += $"苦瓜：";
+                    result += $"发言人：";
                     // #1
                     result += $"{qianze1[rand.Next(qianze1.Count)]}";
                     // #2

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace Native.Csharp.App.Event
 {
     /// <summary>
-    /// 苦瓜bot主要处理类
+    /// bot主要处理类
     /// </summary>
     public class MomordicaMain
     {
@@ -157,94 +157,94 @@ namespace Native.Csharp.App.Event
             catch { }
 
 
-            // 模式配置
-            if (msg.Contains("模式列表"))
-            {
-                string modeindexs = modes.printModeList();
-                modeindexs += "~输入“xx模式on”即可切换模式~";
-                if (isGroup) sendGroup(group, user, modeindexs);
-                else sendPrivate(user, modeindexs);
-                return true;
-            }
-            Regex modereg = new Regex("(\\S+)模式\\s*(on|off)", RegexOptions.IgnoreCase);
-            var moderes = modereg.Match(msg);
-            if (moderes.Success)
-            {
-                try
-                {
-                    string mode = moderes.Groups[1].ToString();
-                    string swit = moderes.Groups[2].ToString().ToLower();
-                    if (swit == "off") mode = "正常";
-                    if (!modes.modedict.ContainsKey(mode))
-                    {
-                        if (config.groupIs(group, "测试") && (mode == "测试" || mode == "喷人"))
-                        {
-                            // pass
-                        }
-                        else
-                        {
-                            string modeindexs = "苦瓜还没有这个模式（小声）";
-                            if (isGroup) sendGroup(group, user, modeindexs);
-                            else sendPrivate(user, modeindexs);
+            //// 模式配置
+            //if (msg.Contains("模式列表"))
+            //{
+            //    string modeindexs = modes.printModeList();
+            //    modeindexs += "~输入“xx模式on”即可切换模式~";
+            //    if (isGroup) sendGroup(group, user, modeindexs);
+            //    else sendPrivate(user, modeindexs);
+            //    return true;
+            //}
+            //Regex modereg = new Regex("(\\S+)模式\\s*(on|off)", RegexOptions.IgnoreCase);
+            //var moderes = modereg.Match(msg);
+            //if (moderes.Success)
+            //{
+            //    try
+            //    {
+            //        string mode = moderes.Groups[1].ToString();
+            //        string swit = moderes.Groups[2].ToString().ToLower();
+            //        if (swit == "off") mode = "正常";
+            //        if (!modes.modedict.ContainsKey(mode))
+            //        {
+            //            if (config.groupIs(group, "测试") && (mode == "测试" || mode == "喷人"))
+            //            {
+            //                // pass
+            //            }
+            //            else
+            //            {
+            //                string modeindexs = "还没有这个模式（小声）";
+            //                if (isGroup) sendGroup(group, user, modeindexs);
+            //                else sendPrivate(user, modeindexs);
 
-                            modeindexs = modes.printModeList();
-                            modeindexs += "~输入“xx模式on”即可切换模式~";
-                            if (isGroup) sendGroup(group, user, modeindexs);
-                            else sendPrivate(user, modeindexs);
-                            return true;
-                        }
-                    }
-                    if (isGroup)
-                    {
-                        sendGroup(group, 0, $"~苦瓜的{mode}模式启动~");
-                        modes.setGroupMode(group, mode);
-                    }
-                    else
-                    {
-                        sendPrivate(user, $"~苦瓜的{mode}模式启动~");
-                        modes.setUserMode(user, mode);
-                    }
-                    return true;
-                }
-                catch { }
-            }
+            //                modeindexs = modes.printModeList();
+            //                modeindexs += "~输入“xx模式on”即可切换模式~";
+            //                if (isGroup) sendGroup(group, user, modeindexs);
+            //                else sendPrivate(user, modeindexs);
+            //                return true;
+            //            }
+            //        }
+            //        if (isGroup)
+            //        {
+            //            sendGroup(group, 0, $"~的{mode}模式启动~");
+            //            modes.setGroupMode(group, mode);
+            //        }
+            //        else
+            //        {
+            //            sendPrivate(user, $"~的{mode}模式启动~");
+            //            modes.setUserMode(user, mode);
+            //        }
+            //        return true;
+            //    }
+            //    catch { }
+            //}
 
-            // 数字论证
-            Regex szlzreg = new Regex("数字论证\\s*(\\S+)");
-            var szlzres = szlzreg.Match(msg);
-            if (szlzres.Success)
-            {
-                try
-                {
-                    string lzdata = szlzres.Groups[1].ToString();
-                    string lz1, lz2;
-                    if (!lzdata.Contains("-"))
-                    {
-                        lz1 = lzdata.Trim();
-                        lz2 = "";
-                    }
-                    else
-                    {
-                        lz1 = lzdata.Split('-')[0].Trim();
-                        lz2 = lzdata.Split('-')[1].Trim();
-                    }
-                    bool proofsuccess = proof.getProofString(lz1, lz2);
-                    if (proofsuccess)
-                    {
-                        if (isGroup) sendGroup(group, user, proof.finalproof);
-                        else sendPrivate(user, proof.finalproof);
-                    }
-                    else
-                    {
-                        string resspeak = "论不出来，我紫菜";
-                        if (isGroup) sendGroup(group, user, resspeak);
-                        else sendPrivate(user, resspeak);
-                    }
-                    return true;
-                }
-                catch { }
+            //// 数字论证
+            //Regex szlzreg = new Regex("数字论证\\s*(\\S+)");
+            //var szlzres = szlzreg.Match(msg);
+            //if (szlzres.Success)
+            //{
+            //    try
+            //    {
+            //        string lzdata = szlzres.Groups[1].ToString();
+            //        string lz1, lz2;
+            //        if (!lzdata.Contains("-"))
+            //        {
+            //            lz1 = lzdata.Trim();
+            //            lz2 = "";
+            //        }
+            //        else
+            //        {
+            //            lz1 = lzdata.Split('-')[0].Trim();
+            //            lz2 = lzdata.Split('-')[1].Trim();
+            //        }
+            //        bool proofsuccess = proof.getProofString(lz1, lz2);
+            //        if (proofsuccess)
+            //        {
+            //            if (isGroup) sendGroup(group, user, proof.finalproof);
+            //            else sendPrivate(user, proof.finalproof);
+            //        }
+            //        else
+            //        {
+            //            string resspeak = "论不出来，我紫菜";
+            //            if (isGroup) sendGroup(group, user, resspeak);
+            //            else sendPrivate(user, resspeak);
+            //        }
+            //        return true;
+            //    }
+            //    catch { }
 
-            }
+            //}
 
             // 功能介绍
             if (new string[] { "用法", "介绍", "功能", "选项", "设置", "帮助", "配置", "设定", "菜单" }.Contains(msg))
@@ -286,7 +286,7 @@ namespace Native.Csharp.App.Event
                 }
             }
 
-            if (msg == "状态")
+            if (msg == "状态" && config.personIs(user,"管理员"))
             {
                 string rmsg = "";
                 rmsg += $"首次启动时间：{config.startTime.ToString("yyyy-MM-dd HH:mm:ss")}(已运行{(DateTime.Now - config.startTime).TotalDays.ToString("0.00")}天)\r\n";
@@ -372,26 +372,7 @@ namespace Native.Csharp.App.Event
 
             }
 
-            // 翻译
-            Regex transreg = new Regex("(\\S+)译(\\S+)\\s+");
-            var transmatch = transreg.Match(msg);
-            if (transmatch.Success)
-            {
-                string msgyilist = transmatch.Groups[0].ToString().Trim();
-                string msgtar = msg.Substring(msgyilist.Length).Trim();
-                var lists = msgyilist.Split('译');
-                if (lists.Length >= 2 && msgtar.Length > 0)
-                {
-                    string res = msgtar;
-                    for (int i = 0; i < lists.Length - 1; i++)
-                    {
-                        res = trans.Translation(res, lists[i + 1], lists[i]);
-                    }
-                    if (isGroup) sendGroup(group, user, res);
-                    else sendPrivate(user, res);
-                    return true;
-                }
-            }
+           
 
             // bilibili 功能
             Regex bsearchreg = new Regex("(\\S+)区有多少(\\S+)");
@@ -416,8 +397,16 @@ namespace Native.Csharp.App.Event
             }
             if (msg.EndsWith("区谁在播") || msg.EndsWith("区有谁在播") || msg.EndsWith("区有谁") || msg.EndsWith("区都有谁"))
             {
-                string areaname = msg.Replace("谁在播", "");
+                string areaname = msg.Substring(0, msg.LastIndexOf('区') + 1);
                 string xnq = bilibili.getLiveNum(areaname);
+                if (isGroup) sendGroup(group, user, xnq);
+                else sendPrivate(user, xnq);
+                return true;
+            }
+            if (msg.EndsWith("区谁最惨"))
+            {
+                string areaname = msg.Substring(0, msg.LastIndexOf('区') + 1);
+                string xnq = bilibili.getPoorLives(areaname);
                 if (isGroup) sendGroup(group, user, xnq);
                 else sendPrivate(user, xnq);
                 return true;
@@ -519,27 +508,48 @@ namespace Native.Csharp.App.Event
             }
 
             //// 谴责
-            if (!config.groupIs(group, "测试"))
+            if (config.groupIs(group, "普通"))
             {
-                Regex qz = new Regex("(.+)谴责(.+)的(.+)");
-                var matchqz = qz.Match(msg);
-                if (matchqz.Success)
+                // 翻译
+                Regex transreg = new Regex("(\\S+)译(\\S+)\\s+");
+                var transmatch = transreg.Match(msg);
+                if (transmatch.Success)
                 {
-                    try
+                    string msgyilist = transmatch.Groups[0].ToString().Trim();
+                    string msgtar = msg.Substring(msgyilist.Length).Trim();
+                    var lists = msgyilist.Split('译');
+                    if (lists.Length >= 2 && msgtar.Length > 0)
                     {
-                        string res = modes.getQianze(matchqz.Groups[1].ToString(), matchqz.Groups[2].ToString(), matchqz.Groups[3].ToString());
-                        if (res.Length > 0)
+                        string res = msgtar;
+                        for (int i = 0; i < lists.Length - 1; i++)
                         {
-                            if (isGroup) sendGroup(group, user, res);
-                            else sendPrivate(user, res);
-                            return true;
+                            res = trans.Translation(res, lists[i + 1], lists[i]);
                         }
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
                     }
-                    catch { }
                 }
+
+                //Regex qz = new Regex("(.+)谴责(.+)的(.+)");
+                //var matchqz = qz.Match(msg);
+                //if (matchqz.Success)
+                //{
+                //    try
+                //    {
+                //        string res = modes.getQianze(matchqz.Groups[1].ToString(), matchqz.Groups[2].ToString(), matchqz.Groups[3].ToString());
+                //        if (res.Length > 0)
+                //        {
+                //            if (isGroup) sendGroup(group, user, res);
+                //            else sendPrivate(user, res);
+                //            return true;
+                //        }
+                //    }
+                //    catch { }
+                //}
             }
 
-            if (!config.groupIs(group, "温和"))
+            if (config.groupIsNot(group, "温和"))
             {
                 if (msg.StartsWith("讽刺"))
                 {
@@ -648,10 +658,10 @@ namespace Native.Csharp.App.Event
             {
                 if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
                 {
-                    sendGroup(group, user, "苦瓜赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”");
+                    sendGroup(group, user, "赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”");
                     return true;
                 }
-                if (isGroup && (msg == "赛马" || msg == "賽馬"))
+                if (isGroup && (msg == "赛马" ))
                 {
                     if (config.groupIs(group, "测试") || racehorse.isAllow(group))
                     {
@@ -797,6 +807,7 @@ namespace Native.Csharp.App.Event
             saveMsg(group, user, question.Trim());
             if (!askme(ref question)) return;
             if (!config.allowuser(user)) return;
+
             if (dealCmd(group, user, question))
             {
                 config.playTimeGroup += 1;
@@ -805,16 +816,19 @@ namespace Native.Csharp.App.Event
             config.playTimeGroup += 1;
 
             string msg = "";
-            string modeName = modes.getGroupMode(group);
-            switch (modeName)
-            {
-                case "正常": msg += getAnswerNormal(user, question); break;
-                case "混沌": msg += modes.getAnswerChaos(user, question); break;
-                case "喷人": msg += modes.getPen(group, user); return; break;
-                case "测试": msg += modes.getHistoryReact(group, user); return; break;
-                default: msg += modes.getAnswerWithMode(user, question, modeName); break;
-            }
+            //string modeName = modes.getGroupMode(group);
+            //switch (modeName)
+            //{
+            //    case "正常": msg += getAnswerNormal(user, question); break;
+            //    case "混沌": msg += modes.getAnswerChaos(user, question); break;
+            //    case "喷人": msg += modes.getPen(group, user); return; break;
+            //    case "测试": msg += modes.getHistoryReact(group, user); return; break;
+            //    default: msg += modes.getAnswerWithMode(user, question, modeName); break;
+            //}
             msg = ItemParser.getHexie(msg);
+
+
+            if (string.IsNullOrWhiteSpace(msg)) return;
             sendGroup(group, user, msg);
             saveMsg(group, config.myQQ, msg.Trim());
         }
@@ -846,11 +860,14 @@ namespace Native.Csharp.App.Event
             {
                 case "正常": msg += getAnswerNormal(user, question); break;
                 case "混沌": msg += modes.getAnswerChaos(user, question); break;
-                case "喷人": msg += modes.getPen(-1, user); return; break;
-                case "测试": msg += modes.getHistoryReact(-1, user); return; break;
+                //case "喷人": msg += modes.getPen(-1, user); return; break;
+                //case "测试": msg += modes.getHistoryReact(-1, user); return; break;
                 default: msg += modes.getAnswerWithMode(user, question, modeName); break;
             }
             msg = ItemParser.getHexie(msg);
+
+            if (string.IsNullOrWhiteSpace(msg)) return;
+
             sendPrivate(user, msg);
             saveMsg(0, user, msg.Trim());
         }
@@ -954,11 +971,11 @@ namespace Native.Csharp.App.Event
         public string getWelcomeString()
         {
             tryInit();
-            return "我是苦瓜bot。用法：\r\n" +
-                "~想在群里乐我，就at我或者打字开头加“苦瓜”，再加内容。私聊乐我的话直接发内容。\r\n" +
+            return "用法：\r\n" +
+                $"~想在群里使用，就at我或者打字开头加“{config.askName}”，再加内容。私聊乐我的话直接发内容。\r\n" +
                 "~以下是常用功能。根据群配置不同，有的功能可能无法提供。\r\n" +
-                "~状态查看：“状态”\r\n" +
-                "~模式更换：“模式列表”、“xx模式on”\r\n" +
+                //"~状态查看：“状态”\r\n" +
+                //"~模式更换：“模式列表”、“xx模式on”\r\n" +
                 "~掷骰：“rd 成功率”“r3d10 攻击力”\r\n" +
                 "~多语翻译：“汉译法译俄 xxxx”\r\n" +
                 "~天气预报：“北京明天天气”\r\n" +
@@ -966,10 +983,9 @@ namespace Native.Csharp.App.Event
                 "~赛马：“赛马介绍”“签到”“个人信息”\r\n" +
                 "~生成攻受文：“A攻B受”\r\n" +
                 //"~生成谴责：“A谴责B的C”\r\n" +
-                "~生成笑话：“讽刺 本国=A国，好人=甲，坏人=乙，事件=xx”\r\n" +
+               // "~生成笑话：“讽刺 本国=A国，好人=甲，坏人=乙，事件=xx”\r\n" +
                 "~生成随机汉字：“随机5*4”\r\n" +
-                "~周易占卜：“占卜 xxx”\r\n" +
-                "~数字论证：“数字论证xxx”";
+                "~周易占卜：“占卜 xxx”\r\n";
         }
     }
 
