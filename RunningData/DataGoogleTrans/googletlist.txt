@@ -18,6 +18,7 @@
 南非荷兰文	af
 卡纳达文	kn
 卢森堡文	lb
+印	hi
 印地文	hi
 印度尼西亚文	id
 古吉拉特文	gu
@@ -46,6 +47,7 @@
 彻罗基文	chr
 德文	de
 意大利文	it
+意	it
 拉丁文	la
 拉脱维亚文	lv
 挪威尼诺斯克文	nn
@@ -59,7 +61,8 @@
 旁遮普文	pa
 日文	ja
 普什图文	ps
-曼尼普里文（曼尼普尔文）	mni-Mtei
+曼尼普里文	mni-Mtei
+曼尼普尔文	mni-Mtei
 格鲁吉亚文	ka
 梵文	sa
 毛利文	mi
@@ -83,7 +86,6 @@
 立陶宛文	lt
 简体中文	zh-CN
 简体中文（中国）	zh-Hans
-粤语	zh-yue
 索拉尼库尔德文	ckb
 索马里文	so
 繁体中文	zh-TW
@@ -102,8 +104,10 @@
 菲律宾文	tl
 萨摩亚文	sm
 葡萄牙文（巴西）	pt-BR
-葡萄牙文（葡萄牙）	pt-PT
+葡萄牙文	pt-PT
 蒙古文	mn
+蒙	mn
+阿	ar
 西弗里西亚文	fy
 西班牙文	es
 赫蒙文	hmn
@@ -120,3 +124,8 @@
 马来文	ms
 马耳他文	mt
 高棉文	km
+自动	auto
+汉	zh-CN
+中	zh-CN
+简	zh-CN
+繁	zh-Hant
