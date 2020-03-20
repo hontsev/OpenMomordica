@@ -1,8 +1,10 @@
 master=287859992
 groupmsgbuff=0
 starttime=2019-10-02 00:29:05
-startnum=49
-playtimeprivate=1544
-playtimegroup=58141
+startnum=79
+playtimeprivate=3058
+playtimegroup=76356
 errtime=0
-askname=危子
+askname=我苦
+ignoreall=0
+testonly=0
