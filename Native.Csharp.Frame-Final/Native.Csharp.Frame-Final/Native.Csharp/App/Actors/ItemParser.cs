@@ -48,7 +48,15 @@ namespace Native.Csharp.App.Actors
 
     class ItemParser
     {
+        Random rand;
         public string replacefile = @"replacewords.txt";
+        public string repfile = @"replaces.txt";
+        public string expfile = @"exps.txt";
+        string path = "";
+        Dictionary<string, string[]> replaces = new Dictionary<string, string[]>();
+        Dictionary<string, string> replacesC = new Dictionary<string, string>();
+        List<string[]> exps = new List<string[]>(); 
+
         Dictionary<string, Link> link1 = new Dictionary<string, Link>();
         Dictionary<string, Link> link2 = new Dictionary<string, Link>();
         Dictionary<string, Area> areas = new Dictionary<string, Area>();
@@ -57,14 +65,15 @@ namespace Native.Csharp.App.Actors
 
         public ItemParser()
         {
-            
 
+            rand = new Random();
         }
 
         public void init(string path)
         {
             try
             {
+                this.path = path;
                 wordReplace = new Dictionary<string, string>();
                 var lines = FileIOActor.readLines(path + replacefile);
                 foreach(var line in lines)
@@ -75,6 +84,25 @@ namespace Native.Csharp.App.Actors
                         wordReplace[items[1]] = items[0];
                     }
                 }
+
+                var lines1 = FileIOActor.readLines(path + repfile);
+                foreach (var line in lines1)
+                {
+                    var items = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (items.Length >= 2)
+                    {
+                        var r1 = items[1].Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        replaces[items[0]] = r1;
+                        foreach(var sr in r1) replacesC[sr] = items[0];
+                    }
+                }
+
+                var lines2 = FileIOActor.readLines(path + expfile);
+                foreach (var line in lines2)
+                {
+                    var items = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    exps.Add(items);
+                }
             }
             catch (Exception e)
             {
@@ -82,6 +110,123 @@ namespace Native.Csharp.App.Actors
             }
 
         }
+
+        public void save()
+        {
+            try
+            {
+                List<string> res = new List<string>();
+                StringBuilder sb = new StringBuilder();
+                foreach(var exp in exps)
+                {
+                    sb.Append($"{string.Join("\t", exp)}\r\n");
+                }
+                File.WriteAllText(path + expfile, sb.ToString(), Encoding.UTF8);
+
+                sb = new StringBuilder();
+                foreach (var rep in replaces)
+                {
+                    sb.Append($"{rep.Key}\t{string.Join(",",rep.Value)}\r\n");
+                }
+                File.WriteAllText(path + repfile, sb.ToString(), Encoding.UTF8);
+
+            }
+            catch
+            {
+
+            }
+        }
+
+        public string getResult(string input)
+        {
+            string res = "";
+            foreach(var exp in exps)
+            {
+                try
+                {
+                    string ine = exp[0];
+                    string oute = exp[1];
+
+                    int maxtime = 20;
+                    int time = 0;
+                    bool find = false;
+                    List<string> initems = new List<string>();
+                    while (ine.Contains('【'))
+                    {
+                        time++;
+                        if (time > maxtime) break;
+                        int begin = ine.IndexOf('【');
+                        int end = ine.IndexOf('】');
+                        string k = ine.Substring(begin + 1, end - begin - 1);
+                        if (replaces.ContainsKey(k))
+                        {
+                            string[] target = replaces[k];
+                            foreach(var tar in target)
+                            {
+                                string t = ine.Replace($"【{k}】", tar);
+                                if (input == t)
+                                {
+                                    find = true;
+                                    initems.Add(tar);
+                                    ine = t;
+                                    //break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    if (input == ine)
+                    {
+                        find = true;
+                    }
+                    time = 0;
+                    if (find)
+                    {
+                        while (oute.Contains('【'))
+                        {
+                            time++;
+                            if (time > maxtime) break;
+                            int begin = ine.IndexOf('【');
+                            int end = ine.IndexOf('】');
+                            string k = ine.Substring(begin + 1, end - begin - 1);
+                            if (replaces.ContainsKey(k))
+                            {
+                                string[] tartmp = replaces[k];
+                                oute=oute.Replace($"【{k}】", tartmp[rand.Next(tartmp.Length)]);
+                            }
+                            else
+                            {
+                                int tryint = -1;
+                                int.TryParse(k, out tryint);
+                                if (tryint > 0)
+                                {
+                                    //tryint -= 1;
+                                    try
+                                    {
+                                        oute = oute.Replace($"【{k}】", initems[tryint - 1]);
+                                    }
+                                    catch
+                                    {
+
+                                    }   
+                                }
+                            }
+                        }
+                        res = oute;
+                    }
+                }
+                catch
+                {
+
+                }
+            }
+
+            return res;
+        }
+
 
         public static string DealInput(string input)
         {

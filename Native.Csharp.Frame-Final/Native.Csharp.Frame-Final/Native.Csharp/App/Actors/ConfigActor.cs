@@ -11,7 +11,7 @@ namespace Native.Csharp.App.Actors
         public long myQQ;                // bot的qq
 
         public long masterQQ;           // 主人的qq，可能响应特殊指令，并私发一些调试消息
-        public bool useGroupMsgBuf = false;        // 如果bot的qq号被腾讯限制群聊，可以尝试用这个模式突破之
+        public int useGroupMsgBuf = 0;        // 如果bot的qq号被腾讯限制群聊，可以尝试用这个模式突破之
         public DateTime startTime;
         public string startTimeString;
         public long beginTimes;
@@ -20,6 +20,8 @@ namespace Native.Csharp.App.Actors
         public long playTimeGroup = 0;
         public long errTime = 0;
         public string askName;
+        public bool ignoreall = false;
+        public bool testonly = false;
 
 
         public string path;
@@ -51,7 +53,7 @@ namespace Native.Csharp.App.Actors
                     }
                 }
                 if (configs.ContainsKey("master")) masterQQ = long.Parse(configs["master"]);
-                if (configs.ContainsKey("groupmsgbuff")) useGroupMsgBuf = configs["groupmsgbuff"] == "1" ? true : false;
+                if (configs.ContainsKey("groupmsgbuff")) useGroupMsgBuf = int.Parse(configs["groupmsgbuff"]);
                 if (configs.ContainsKey("starttime"))
                 {
                     startTime = DateTime.ParseExact(configs["starttime"], "yyyy-MM-dd hh:mm:ss", System.Globalization.CultureInfo.CurrentCulture);
@@ -62,7 +64,8 @@ namespace Native.Csharp.App.Actors
                 if (configs.ContainsKey("playtimegroup")) playTimeGroup = long.Parse(configs["playtimegroup"]);
                 if (configs.ContainsKey("errtime")) errTime = long.Parse(configs["errtime"]);
                 if (configs.ContainsKey("askname")) askName = configs["askname"];
-
+                if (configs.ContainsKey("ignoreall")) ignoreall = long.Parse(configs["ignoreall"]) == 0 ? false : true;
+                if (configs.ContainsKey("testonly")) testonly = long.Parse(configs["testonly"]) == 0 ? false : true;
             }
             catch (Exception e)
             {
@@ -105,13 +108,15 @@ namespace Native.Csharp.App.Actors
             {
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine($"master={masterQQ}");
-                sb.AppendLine($"groupmsgbuff={(useGroupMsgBuf?1:0)}");
+                sb.AppendLine($"groupmsgbuff={useGroupMsgBuf}");
                 sb.AppendLine($"starttime={startTimeString}");
                 sb.AppendLine($"startnum={beginTimes}");
                 sb.AppendLine($"playtimeprivate={playTimePrivate}");
                 sb.AppendLine($"playtimegroup={playTimeGroup}");
                 sb.AppendLine($"errtime={errTime}");
                 sb.AppendLine($"askname={askName}");
+                sb.AppendLine($"ignoreall={(ignoreall == true ? 1 : 0)}");
+                sb.AppendLine($"testonly={(testonly == true ? 1 : 0)}");
                 FileIOActor.write(path + configFile, sb.ToString());
 
                 sb = new StringBuilder();
@@ -145,6 +150,42 @@ namespace Native.Csharp.App.Actors
             return !groupIs(group, state);
         }
 
+        
+
+        public void groupAddTag(long group, string state)
+        {
+            if (!groupLevel.ContainsKey(group)) groupLevel[group] = new List<string>();
+            if (!groupLevel[group].Contains(state.Trim()))
+            {
+                groupLevel[group].Add(state.Trim());
+                save();
+            }
+        }
+
+        public void groupDeleteTag(long group, string state)
+        {
+            if (!groupLevel.ContainsKey(group)) return;
+            groupLevel[group].Remove(state.Trim());
+            save();
+        }
+
+        public void personAddTag(long user, string state)
+        {
+            if (!personLevel.ContainsKey(user)) personLevel[user] = new List<string>();
+            if (!personLevel[user].Contains(state.Trim()))
+            {
+                personLevel[user].Add(state.Trim());
+                save();
+            }
+        }
+
+        public void personDeleteTag(long user, string state)
+        {
+            if (!personLevel.ContainsKey(user)) return;
+            personLevel[user].Remove(state.Trim());
+            save();
+        }
+
         public bool personIs(long user, string state)
         {
             if (personLevel.ContainsKey(user)) return personLevel[user].Contains(state);
@@ -166,23 +207,44 @@ namespace Native.Csharp.App.Actors
                 {
                     for(int i = 0; i < personLevel[user].Count; i++)
                     {
-                        if (personLevel[user][i].StartsWith("剩余："))
+                        if (personLevel[user][i].StartsWith("有限："))
                         {
                             try
                             {
-                                int lefttime = int.Parse(personLevel[user][i].Substring(3));
-                                if (lefttime > 0)
+                                var paras = personLevel[user][i].Substring(3).Trim().Split(' ');
+                                if (paras.Length >= 3)
                                 {
-                                    lefttime -= 1;
-                                    personLevel[user][i] = $"剩余：" + lefttime;
-                                    // TODO:整小时，重置互乐次数
-                                    return true;
+                                    long lefttime, fulltime, lastts;
+                                    long.TryParse(paras[0], out lefttime);
+                                    long.TryParse(paras[1], out fulltime);
+                                    long.TryParse(paras[2], out lastts);
+
+
+                                    if (lefttime <= 0)
+                                    {
+                                        // try time reset
+                                        DateTime lasttime = new DateTime(lastts);
+                                        if(DateTime.Now - lasttime > TimeSpan.FromMinutes(60))
+                                        {
+                                            lastts = DateTime.Now.Ticks;
+                                            lefttime = fulltime;
+                                        }
+                                    }
+
+                                    if (lefttime > 0)
+                                    {
+                                        lefttime -= 1;
+                                        personLevel[user][i] = $"有限：{lefttime} {fulltime} {lastts}";
+                                        return true;
+                                    }
                                 }
+                                
                             }
                             catch
                             {
 
                             }
+                            return false;
                         }
                     }
                 }

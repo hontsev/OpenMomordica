@@ -251,28 +251,31 @@ namespace Native.Csharp.App.Actors
             if (RacehorseActor.rand.Next(100) < 20)
             {
                 // play a skill!
-                int skillNum = RacehorseActor.rand.Next(0, roads.Count);
-
-                var road = roads[skillNum];
-                if (road.horse.triggerType != 0)
+                int skillNum = RacehorseActor.rand.Next(1, roadnum + 1);
+                if (roads.ContainsKey(skillNum))
                 {
-                    switch (road.horse.triggerType)
+                    var road = roads[skillNum];
+                    if (road.horse.triggerType != 0)
                     {
-                        case 1:
-                            // 自身加速
-                            skillDescription = $"{road.num}号马突然开始加速！";
-                            road.buff = new Buff(road.horse.triggerEmoji, road.horse.triggerType, road.horse.triggerParam, 1);
-                            road.buff.speedAdd = road.horse.triggerParam;
-                            break;
-                        case 2:
-                            // 第一减速
-                            skillDescription = $"{road.num}号马累了！";
-                            road.buff = new Buff(road.horse.triggerEmoji, road.horse.triggerType, road.horse.triggerParam, 1);
-                            road.buff.speedAdd = road.horse.triggerParam;
-                            break;
-                        default: break;
+                        switch (road.horse.triggerType)
+                        {
+                            case 1:
+                                // 自身加速
+                                skillDescription = $"{road.num}号马突然开始加速！";
+                                road.buff = new Buff(road.horse.triggerEmoji, road.horse.triggerType, road.horse.triggerParam, 1);
+                                road.buff.speedAdd = road.horse.triggerParam;
+                                break;
+                            case 2:
+                                // 第一减速
+                                skillDescription = $"{road.num}号马累了！";
+                                road.buff = new Buff(road.horse.triggerEmoji, road.horse.triggerType, road.horse.triggerParam, 1);
+                                road.buff.speedAdd = road.horse.triggerParam;
+                                break;
+                            default: break;
+                        }
                     }
                 }
+               
 
             }
 

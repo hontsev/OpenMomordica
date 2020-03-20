@@ -79,13 +79,13 @@ namespace Native.Csharp.App.Actors
             //FileIOActor.log(url);
             //return url;
             string httpresult = WebConnectActor.getData(url, Encoding.UTF8);
-            //FileIOActor.log(httpresult);
+           // FileIOActor.log(httpresult);
             try
             {
                 string res = "";
                 JArray jo = (JArray)JsonConvert.DeserializeObject(httpresult);
                 //JObject jo = JObject.Parse(httpresult);
-               // FileIOActor.log(jo[0].ToString());
+                //FileIOActor.log(jo[0].ToString());
                 int resnum = jo[0].Count();
                 if (resnum >= 1)
                 {

@@ -62,6 +62,7 @@ namespace Native.Csharp.App.Event
         RacehorseActor racehorse = new RacehorseActor();
         BTCActor btc = new BTCActor();
         DivinationActor divi = new DivinationActor();
+        ItemActor itema = new ItemActor();
 
         static MomordicaMain()
         {
@@ -100,6 +101,7 @@ namespace Native.Csharp.App.Event
                         config.init(rootDict + "\\");
                         trans.init(rootDict + DataGoogleTransPath);
                         divi.init(rootDict + DataDivinationPath);
+                        itema.init(rootDict + DataBaiduPath);
 
                         inited = true;
 
@@ -157,108 +159,185 @@ namespace Native.Csharp.App.Event
             catch { }
 
 
-            //// 模式配置
-            //if (msg.Contains("模式列表"))
-            //{
-            //    string modeindexs = modes.printModeList();
-            //    modeindexs += "~输入“xx模式on”即可切换模式~";
-            //    if (isGroup) sendGroup(group, user, modeindexs);
-            //    else sendPrivate(user, modeindexs);
-            //    return true;
-            //}
-            //Regex modereg = new Regex("(\\S+)模式\\s*(on|off)", RegexOptions.IgnoreCase);
-            //var moderes = modereg.Match(msg);
-            //if (moderes.Success)
-            //{
-            //    try
-            //    {
-            //        string mode = moderes.Groups[1].ToString();
-            //        string swit = moderes.Groups[2].ToString().ToLower();
-            //        if (swit == "off") mode = "正常";
-            //        if (!modes.modedict.ContainsKey(mode))
-            //        {
-            //            if (config.groupIs(group, "测试") && (mode == "测试" || mode == "喷人"))
-            //            {
-            //                // pass
-            //            }
-            //            else
-            //            {
-            //                string modeindexs = "还没有这个模式（小声）";
-            //                if (isGroup) sendGroup(group, user, modeindexs);
-            //                else sendPrivate(user, modeindexs);
-
-            //                modeindexs = modes.printModeList();
-            //                modeindexs += "~输入“xx模式on”即可切换模式~";
-            //                if (isGroup) sendGroup(group, user, modeindexs);
-            //                else sendPrivate(user, modeindexs);
-            //                return true;
-            //            }
-            //        }
-            //        if (isGroup)
-            //        {
-            //            sendGroup(group, 0, $"~的{mode}模式启动~");
-            //            modes.setGroupMode(group, mode);
-            //        }
-            //        else
-            //        {
-            //            sendPrivate(user, $"~的{mode}模式启动~");
-            //            modes.setUserMode(user, mode);
-            //        }
-            //        return true;
-            //    }
-            //    catch { }
-            //}
-
-            //// 数字论证
-            //Regex szlzreg = new Regex("数字论证\\s*(\\S+)");
-            //var szlzres = szlzreg.Match(msg);
-            //if (szlzres.Success)
-            //{
-            //    try
-            //    {
-            //        string lzdata = szlzres.Groups[1].ToString();
-            //        string lz1, lz2;
-            //        if (!lzdata.Contains("-"))
-            //        {
-            //            lz1 = lzdata.Trim();
-            //            lz2 = "";
-            //        }
-            //        else
-            //        {
-            //            lz1 = lzdata.Split('-')[0].Trim();
-            //            lz2 = lzdata.Split('-')[1].Trim();
-            //        }
-            //        bool proofsuccess = proof.getProofString(lz1, lz2);
-            //        if (proofsuccess)
-            //        {
-            //            if (isGroup) sendGroup(group, user, proof.finalproof);
-            //            else sendPrivate(user, proof.finalproof);
-            //        }
-            //        else
-            //        {
-            //            string resspeak = "论不出来，我紫菜";
-            //            if (isGroup) sendGroup(group, user, resspeak);
-            //            else sendPrivate(user, resspeak);
-            //        }
-            //        return true;
-            //    }
-            //    catch { }
-
-            //}
-
-            // 功能介绍
-            if (new string[] { "用法", "介绍", "功能", "选项", "设置", "帮助", "配置", "设定", "菜单" }.Contains(msg))
+            if (config.groupIs(group, "沉默"))
             {
-                if (isGroup) sendGroup(group, -1, getWelcomeString());
-                else sendPrivate(user, getWelcomeString());
                 return true;
             }
 
-            if (msg.StartsWith("设置") && config.personIs(user, "管理员"))
+
+            // 模式配置
+            if ((!config.testonly && config.groupIs(group, "闲聊")) || config.groupIs(group, "测试"))
+            {
+                if (msg.Contains("模式列表"))
+                {
+                    string modeindexs = modes.printModeList();
+                    modeindexs += "~输入“xx模式on”即可切换模式~";
+                    if (isGroup) sendGroup(group, user, modeindexs);
+                    else sendPrivate(user, modeindexs);
+                    return true;
+                }
+                Regex modereg = new Regex("(\\S+)模式\\s*(on|off)", RegexOptions.IgnoreCase);
+                var moderes = modereg.Match(msg);
+                if (moderes.Success)
+                {
+                    try
+                    {
+                        string mode = moderes.Groups[1].ToString();
+                        string swit = moderes.Groups[2].ToString().ToLower();
+                        if (swit == "off") mode = "正常";
+                        if (!modes.modedict.ContainsKey(mode))
+                        {
+                            if (config.groupIs(group, "测试") && (mode == "测试" || mode == "喷人"))
+                            {
+                                // pass
+                            }
+                            else
+                            {
+                                string modeindexs = "还没有这个模式（小声）";
+                                if (isGroup) sendGroup(group, user, modeindexs);
+                                else sendPrivate(user, modeindexs);
+
+                                modeindexs = modes.printModeList();
+                                modeindexs += "~输入“xx模式on”即可切换模式~";
+                                if (isGroup) sendGroup(group, user, modeindexs);
+                                else sendPrivate(user, modeindexs);
+                                return true;
+                            }
+                        }
+                        if (isGroup)
+                        {
+                            sendGroup(group, -1, $"~{config.askName} {mode}模式启动~");
+                            modes.setGroupMode(group, mode);
+                        }
+                        else
+                        {
+                            sendPrivate(user, $"~{config.askName} {mode}模式启动~");
+                            modes.setUserMode(user, mode);
+                        }
+                        return true;
+                    }
+                    catch { }
+                }
+            }
+
+            if (!config.testonly || config.groupIs(group, "测试"))
+            {
+                // 功能介绍
+                if (new string[] { "用法", "介绍", "功能", "选项", "帮助", "配置", "设定", "菜单" }.Contains(msg))
+                {
+                    if (isGroup) sendGroup(group, -1, getWelcomeString());
+                    else sendPrivate(user, getWelcomeString());
+                    return true;
+                }
+            }
+
+
+            if (msg.StartsWith("设置") && config.personIs(user, "管理员") && isGroup)
             {
                 string cmd = msg.Substring(2);
                 try
                 {
+                    if (cmd.StartsWith("紧急"))
+                    {
+                        cmd = cmd.Substring(2);
+                        if (cmd.StartsWith("中止") || cmd.StartsWith("停止"))
+                        {
+                            sendPrivate(config.masterQQ, "已紧急中止。");
+                            sendGroup(group, -1, $"Well, It shall be done.");
+                            config.ignoreall = true;
+                            config.save();
+                        }
+                        else if (cmd.StartsWith("恢复"))
+                        {
+                            config.ignoreall = false;
+                            config.testonly = false;
+                            sendPrivate(config.masterQQ, "状态已恢复。");
+                            sendGroup(group, -1, $"Hello, Tencent.");
+                            config.save();
+                        }
+                        else if (cmd.StartsWith("封闭"))
+                        {
+                            sendPrivate(config.masterQQ, "已封闭。仅测试群和管理员账号可响应。");
+                            sendGroup(group, -1, $"Closing myself.");
+                            config.testonly = true;
+                            config.save();
+                        }
+                        return true;
+                    }
+
+
+                    if (cmd.StartsWith("模式"))
+                    {
+                        // group tag change
+                        cmd = cmd.Substring(2);
+                        if (cmd.StartsWith("+") || cmd.StartsWith("加"))
+                        {
+                            string newmode = cmd.Substring(1).Trim();
+                            config.groupAddTag(group, newmode);
+                            sendGroup(group, -1, $"已添加群tag:{newmode}");
+                            return true;
+                        }
+                        else if (cmd.StartsWith("-") || cmd.StartsWith("减"))
+                        {
+                            string newmode = cmd.Substring(1).Trim();
+                            config.groupDeleteTag(group, newmode);
+                            sendGroup(group, -1, $"已删除群tag:{newmode}");
+                            return true;
+                        }
+                    }
+
+                    if (cmd.StartsWith("拉黑"))
+                    {
+                        // group tag change
+                        cmd = cmd.Substring(2);
+                        if (cmd.StartsWith("+") || cmd.StartsWith("加"))
+                        {
+                            
+                            var targetItem = cmd.Substring(1).Trim().Split(new char[] { ' ', ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (targetItem.Length >= 1)
+                            {
+                                long targetUser;
+                                long.TryParse(targetItem[0], out targetUser);
+                                config.personAddTag(targetUser, "屏蔽");
+
+                                if (targetItem.Length >= 2)
+                                {
+                                    long targetTime;
+                                    long.TryParse(targetItem[0], out targetTime);
+                                    config.personAddTag(targetUser, $"有限：{targetTime} {targetTime} {DateTime.Now.Ticks}");
+                                }
+
+                                //string newmode = cmd.Substring(1).Trim();
+                                sendGroup(group, -1, $"已处理{targetUser}");
+                                return true;
+                            }
+                        }
+                        else if (cmd.StartsWith("-") || cmd.StartsWith("减"))
+                        {
+                            var targetItem = cmd.Substring(1).Trim().Split(new char[] { ' ', ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (targetItem.Length >= 1)
+                            {
+                                long targetUser;
+                                long.TryParse(targetItem[0], out targetUser);
+                                config.personDeleteTag(targetUser, "屏蔽");
+
+                                sendGroup(group, -1, $"已处理{targetUser}");
+                                return true;
+                            }
+                        }
+                    }
+
+                    if (cmd.StartsWith("拳交"))
+                    {
+                        int qjnum = 0;
+                        int.TryParse(cmd.Substring(2), out qjnum);
+                        config.useGroupMsgBuf = qjnum;
+                        sendGroup(group, -1, $"目前AMM值:{qjnum}");
+                        return true;
+                    }
+
+
+
                     //if (cmd == "重发欢迎消息")
                     //{
                     //    var groups = Directory.GetFiles(rootDict + historyPath + "group\\", "*.txt");
@@ -280,236 +359,310 @@ namespace Native.Csharp.App.Event
                     //    //}
                     //}
                 }
-                catch
+                catch(Exception ex)
                 {
-
+                    FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
                 }
-            }
-
-            if (msg == "状态" && config.personIs(user,"管理员"))
-            {
-                string rmsg = "";
-                rmsg += $"首次启动时间：{config.startTime.ToString("yyyy-MM-dd HH:mm:ss")}(已运行{(DateTime.Now - config.startTime).TotalDays.ToString("0.00")}天)\r\n";
-                rmsg += $"本次启动时间：{config.thisStartTime.ToString("yyyy-MM-dd HH:mm:ss")}(已运行{(DateTime.Now - config.thisStartTime).TotalDays.ToString("0.00")}天)\r\n";
-                rmsg += $"重启次数：{config.beginTimes}次\r\n";
-                rmsg += $"加了{getQQGroupNum()}个群\r\n";
-                rmsg += $"在群里被乐{ config.playTimeGroup }次\r\n";
-                rmsg += $"在私聊被乐{ config.playTimePrivate }次\r\n";
-                if (isGroup) rmsg += $"在本群的配置是：{(config.groupLevel.ContainsKey(group) ? string.Join("，", config.groupLevel[group]) : "普通群")}\r\n";
-                if (isGroup) rmsg += $"在本群是{ modes.getGroupMode(group)}模式\r\n";
-                else rmsg += $"目前是{modes.getUserMode(user)}模式\r\n";
-
-                if (isGroup) sendGroup(group, -1, rmsg);
-                else sendPrivate(user, rmsg);
-                return true;
-            }
-            if (msg == "存档" && config.personIs(user, "管理员"))
-            {
-                btc.save();
-                racehorse.save();
-                config.save();
-                string rmsg = "好，已存档";
-                if (isGroup) sendGroup(group, -1, rmsg);
-                else sendPrivate(user, rmsg);
                 return true;
             }
 
-            if (msg.Contains("拳交"))
+            if (!config.testonly || config.groupIs(group, "测试"))
             {
-                List<string> onMsg = new List<string> { "拳交on", "拳交ON", "开始拳交", "拳交马化腾", "拳交开始", "拳交启动", "拳交开启", "开启拳交" };
-                List<string> offMsg = new List<string> { "拳交off", "拳交OFF", "停止拳交", "结束拳交", "拳交停止", "拳交结束", "拳交关闭" };
-                List<string> qjusers = new List<string> { "807079241", "3345806534" };
-                qjusers.Add(config.masterQQ.ToString());
-                string rmsg = "";
-                if (onMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || config.groupIs(group, "测试")))
+                if (msg == "状态" && config.personIs(user, "管理员"))
                 {
-                    config.useGroupMsgBuf = true;
-                    rmsg = "开始拳交马化腾";
-                }
-                else if (offMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || config.groupIs(group, "测试")))
-                {
-                    config.useGroupMsgBuf = false;
-                    rmsg = "不再拳交马化腾";
-                }
-                if (!string.IsNullOrWhiteSpace(rmsg))
-                {
+                    string rmsg = "";
+                    if (config.groupIs(group, "测试"))
+                    {
+                        rmsg += $"首次启动时间：{config.startTime.ToString("yyyy-MM-dd HH:mm:ss")}(已运行{(DateTime.Now - config.startTime).TotalDays.ToString("0.00")}天)\r\n";
+                        rmsg += $"本次启动时间：{config.thisStartTime.ToString("yyyy-MM-dd HH:mm:ss")}(已运行{(DateTime.Now - config.thisStartTime).TotalDays.ToString("0.00")}天)\r\n";
+                        rmsg += $"重启了{config.beginTimes}次\r\n";
+                        rmsg += $"加了{getQQGroupNum()}个群\r\n";
+                        rmsg += $"在群里被乐{ config.playTimeGroup }次\r\n";
+                        rmsg += $"在私聊被乐{ config.playTimePrivate }次\r\n";
+                    }
+                    if (isGroup) rmsg += $"在本群的配置是：{(config.groupLevel.ContainsKey(group) ? string.Join("，", config.groupLevel[group]) : "*平平无奇*")}\r\n";
+                    if (isGroup && (config.groupIs(group, "测试") || (config.groupIs(group, "闲聊")))) rmsg += $"在本群闲聊是{ modes.getGroupMode(group)}模式\r\n";
+                    else rmsg += $"目前是{modes.getUserMode(user)}模式\r\n";
+
                     if (isGroup) sendGroup(group, -1, rmsg);
                     else sendPrivate(user, rmsg);
                     return true;
                 }
-            }
-
-            // 天气 
-            if (msg.EndsWith("天气"))
-            {
-                msg = msg.Substring(0, msg.Length - 2);
-                string daystr = "今天";
-                var daystrs = new string[] { "今天", "明天", "大后天", "后天" };
-                foreach (var ds in daystrs)
+                if (msg == "存档" && config.personIs(user, "管理员"))
                 {
-                    if (msg.EndsWith(ds))
-                    {
-                        daystr = ds;
-                        msg = msg.Substring(0, msg.Length - ds.Length);
-                        break;
-                    }
-
-                    if (msg.StartsWith(ds))
-                    {
-                        daystr = ds;
-                        msg = msg.Substring(ds.Length);
-                        break;
-                    }
-                }
-                string wres = weather.getWeather(msg, daystr);
-                if (!string.IsNullOrWhiteSpace(wres))
-                {
-                    wres = msg + wres;
-                    if (isGroup) sendGroup(group, user, wres);
-                    else sendPrivate(user, wres);
+                    btc.save();
+                    racehorse.save();
+                    config.save();
+                    string rmsg = "好，已存档";
+                    if (isGroup) sendGroup(group, -1, rmsg);
+                    else sendPrivate(user, rmsg);
                     return true;
                 }
 
-            }
-
-           
-
-            // bilibili 功能
-            Regex bsearchreg = new Regex("(\\S+)区有多少(\\S+)");
-            var bseatchres = bsearchreg.Match(msg);
-            if (bseatchres.Success)
-            {
-                try
+                if (msg.Contains("拳交"))
                 {
-                    string barea = bseatchres.Groups[1].ToString().Trim() + "区";
-                    string btar = bseatchres.Groups[2].ToString().Trim();
+                    List<string> onMsg = new List<string> { "拳交on", "拳交ON", "开始拳交", "拳交马化腾", "拳交开始", "拳交启动", "拳交开启", "开启拳交" };
+                    List<string> offMsg = new List<string> { "拳交off", "拳交OFF", "停止拳交", "结束拳交", "拳交停止", "拳交结束", "拳交关闭" };
+                    List<string> qjusers = new List<string> { "807079241", "3345806534" };
+                    qjusers.Add(config.masterQQ.ToString());
+                    string rmsg = "";
+                    if (onMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || config.groupIs(group, "测试")))
+                    {
+                        config.useGroupMsgBuf = 54;
+                        rmsg = "开始拳交马化腾";
+                    }
+                    else if (offMsg.Contains(msg) && (qjusers.Contains(user.ToString()) || config.groupIs(group, "测试")))
+                    {
+                        config.useGroupMsgBuf = 0;
+                        rmsg = "不再拳交马化腾";
+                    }
+                    if (!string.IsNullOrWhiteSpace(rmsg))
+                    {
+                        if (isGroup) sendGroup(group, -1, rmsg);
+                        else sendPrivate(user, rmsg);
+                        return true;
+                    }
+                }
 
-                    string res = bilibili.getTitleSearch(barea, btar);
+
+
+
+                if (msg.StartsWith("看看状态") && (config.personIs(user, "管理员") || config.groupIs(group, "测试")))
+                {
+                    string res = "";
+                    res = itema.showExps();
+
+                    if (isGroup) sendGroup(group, user, res);
+                    else sendPrivate(user, res);
+
+                    res = itema.showReps();
 
                     if (isGroup) sendGroup(group, user, res);
                     else sendPrivate(user, res);
                     return true;
-                }
-                catch
-                {
+
 
                 }
-            }
-            if (msg.EndsWith("区谁在播") || msg.EndsWith("区有谁在播") || msg.EndsWith("区有谁") || msg.EndsWith("区都有谁"))
-            {
-                string areaname = msg.Substring(0, msg.LastIndexOf('区') + 1);
-                string xnq = bilibili.getLiveNum(areaname);
-                if (isGroup) sendGroup(group, user, xnq);
-                else sendPrivate(user, xnq);
-                return true;
-            }
-            if (msg.EndsWith("区谁最惨"))
-            {
-                string areaname = msg.Substring(0, msg.LastIndexOf('区') + 1);
-                string xnq = bilibili.getPoorLives(areaname);
-                if (isGroup) sendGroup(group, user, xnq);
-                else sendPrivate(user, xnq);
-                return true;
-            }
-            if (msg.Contains("在播吗") || msg.Contains("播了吗"))
-            {
-                string test = msg.Replace("在播吗", "").Replace("播了吗", "");
-                //log(test);
-                string res = bilibili.getLiveInfo(test);
-                if (isGroup) sendGroup(group, user, res);
-                else sendPrivate(user, res);
-                return true;
-            }
-            if (msg.StartsWith("设置别名"))
-            {
-                var items = msg.Replace("设置别名", "").Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                if (items.Length >= 2)
-                {
-                    bilibili.setReplaceName(items[0], items[1]);
-                    string res = "好";
-                    if (isGroup) sendGroup(group, user, res);
-                    else sendPrivate(user, res);
-                    return true;
-                }
-            }
-            if (msg.StartsWith("设置房间号"))
-            {
-                var items = msg.Replace("设置房间号", "").Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                if (items.Length >= 2)
-                {
-                    bilibili.setRoomId(items[0], items[1]);
-                    string res = "好";
-                    if (isGroup) sendGroup(group, user, res);
-                    else sendPrivate(user, res);
-                    return true;
-                }
-            }
 
-            // 骰子
-            string diceres = dice.getRollString(msg.Trim());
-            if (!string.IsNullOrWhiteSpace(diceres))
-            {
-                if (isGroup) sendGroup(group, user, diceres);
-                else sendPrivate(user, diceres);
-                return true;
-            }
-
-            // 随机汉字
-            if (msg.StartsWith("随机"))
-            {
-                msg = msg.Replace("随机", "").Trim();
-                int time = 1;
-                int num = 1;
-                if (msg.Contains("*"))
+                if (msg.StartsWith("替换") && (config.personIs(user, "管理员") || config.groupIs(group, "测试")))
                 {
-                    try
+                    var item = msg.Substring(2).Split('=');
+                    if (item.Length >= 2)
                     {
-                        var item = msg.Split('*');
-                        num = int.Parse(item[0]);
-                        time = int.Parse(item[1]);
+                        string res = "";
+                        itema.inputRep(item[0], item[1]);
+                        //res = itema.getResult(res);
+                        res = $"已存储替换，{item[0]}=>{item[1]}";
+
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
                     }
-                    catch { }
-                }
-                try
-                {
-                    num = int.Parse(msg);
-                }
-                catch { }
-                string res = "";
-                if (time > 0 && time < 200 && num > 0 && num < 200 && num * time < 1000)
-                {
-                    res = modes.getRandomCharSentence(time, num);
-                }
-                else
-                {
-                    res = "太多了，溢出来了！";
-                }
-                if (isGroup) sendGroup(group, user, res);
-                else sendPrivate(user, res);
-                return true;
-            }
 
-            // 攻受
-            Regex gs = new Regex("(.+)攻(.+)受");
-            var matchgs = gs.Match(msg);
-            if (matchgs.Success)
-            {
-                try
+                }
+                if (msg.StartsWith("公式") && (config.personIs(user, "管理员") || config.groupIs(group, "测试")))
                 {
-                    string res = modes.getGongshou(matchgs.Groups[1].ToString(), matchgs.Groups[2].ToString());
-                    if (res.Length > 0)
+                    var item = msg.Substring(2).Split('=');
+                    if (item.Length >= 2)
                     {
+                        string res = "";
+                        itema.inputExp(item[0], item[1]);
+                        //res = itema.getResult(res);
+                        res = $"已存储公式，{item[0]}=>{item[1]}";
+
                         if (isGroup) sendGroup(group, user, res);
                         else sendPrivate(user, res);
                         return true;
                     }
                 }
-                catch { }
-            }
 
-            //// 谴责
-            if (config.groupIs(group, "普通"))
-            {
+                //// 天气 
+                //if (msg.EndsWith("天气"))
+                //{
+                //    msg = msg.Substring(0, msg.Length - 2);
+                //    string daystr = "今天";
+                //    var daystrs = new string[] { "今天", "明天", "大后天", "后天" };
+                //    foreach (var ds in daystrs)
+                //    {
+                //        if (msg.EndsWith(ds))
+                //        {
+                //            daystr = ds;
+                //            msg = msg.Substring(0, msg.Length - ds.Length);
+                //            break;
+                //        }
+
+                //        if (msg.StartsWith(ds))
+                //        {
+                //            daystr = ds;
+                //            msg = msg.Substring(ds.Length);
+                //            break;
+                //        }
+                //    }
+                //    string wres = weather.getWeather(msg, daystr);
+                //    if (!string.IsNullOrWhiteSpace(wres))
+                //    {
+                //        wres = msg + wres;
+                //        if (isGroup) sendGroup(group, user, wres);
+                //        else sendPrivate(user, wres);
+                //        return true;
+                //    }
+
+                //}
+
+
+
+                // bilibili 功能
+                Regex bsearchreg = new Regex("(\\S+)区有多少(\\S+)");
+                var bseatchres = bsearchreg.Match(msg);
+                if (bseatchres.Success)
+                {
+                    try
+                    {
+                        string barea = bseatchres.Groups[1].ToString().Trim() + "区";
+                        string btar = bseatchres.Groups[2].ToString().Trim();
+
+                        string res = bilibili.getTitleSearch(barea, btar);
+
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                    catch
+                    {
+
+                    }
+                }
+                if (msg.EndsWith("区谁在播") || msg.EndsWith("区有谁在播") || msg.EndsWith("区有谁") || msg.EndsWith("区都有谁"))
+                {
+                    string areaname = msg.Substring(0, msg.LastIndexOf('区') + 1);
+                    string xnq = bilibili.getLiveNum(areaname);
+                    if (isGroup) sendGroup(group, user, xnq);
+                    else sendPrivate(user, xnq);
+                    return true;
+                }
+                if (msg.EndsWith("区谁最惨"))
+                {
+                    string areaname = msg.Substring(0, msg.LastIndexOf('区') + 1);
+                    string xnq = bilibili.getPoorLives(areaname);
+                    if (isGroup) sendGroup(group, user, xnq);
+                    else sendPrivate(user, xnq);
+                    return true;
+                }
+                if (msg.Contains("在播吗") || msg.Contains("播了吗"))
+                {
+                    string test = msg.Replace("在播吗", "").Replace("播了吗", "");
+                    //log(test);
+                    string res = bilibili.getLiveInfo(test);
+                    if (isGroup) sendGroup(group, user, res);
+                    else sendPrivate(user, res);
+                    return true;
+                }
+                if (msg.StartsWith("别名"))
+                {
+                    var items = msg.Substring(2).Trim().Split(new char[] { ' ', ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (items.Length >= 2)
+                    {
+                        bilibili.setReplaceName(items[0], items[1]);
+                        bilibili.setReplaceName(items[1], items[0]);
+                        string res = "好";
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+                if (msg.StartsWith("房间号"))
+                {
+                    var items = msg.Substring(3).Trim().Split(new char[] { ' ', ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (items.Length >= 2)
+                    {
+                        bilibili.setRoomId(items[0], items[1]);
+                        string res = "好";
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+
+                if (msg.StartsWith("查看别名"))
+                {
+                    var item = msg.Substring(4).Trim();
+                    if (item.Length > 0)
+                    {
+                        var reslist = bilibili.getNames(item);
+                        string res = string.Join("/", reslist);
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+
+                // 骰子
+                string diceres = dice.getRollString(msg.Trim());
+                if (!string.IsNullOrWhiteSpace(diceres))
+                {
+                    if (isGroup) sendGroup(group, user, diceres);
+                    else sendPrivate(user, diceres);
+                    return true;
+                }
+
+                // 随机汉字
+                if (msg.StartsWith("随机"))
+                {
+                    msg = msg.Replace("随机", "").Trim();
+                    int time = 1;
+                    int num = 1;
+                    if (msg.Contains("*"))
+                    {
+                        try
+                        {
+                            var item = msg.Split('*');
+                            num = int.Parse(item[0]);
+                            time = int.Parse(item[1]);
+                        }
+                        catch { }
+                    }
+                    try
+                    {
+                        num = int.Parse(msg);
+                    }
+                    catch { }
+                    string res = "";
+                    if (time > 0 && time < 200 && num > 0 && num < 200 && num * time < 1500)
+                    {
+                        res = modes.getRandomCharSentence(time, num);
+                    }
+                    else if (num * time <= 0)
+                    {
+                        res = "？";
+                    }
+                    else
+                    {
+                        res = "太多了，溢出来了！";
+                    }
+                    if (isGroup) sendGroup(group, user, res);
+                    else sendPrivate(user, res);
+                    return true;
+                }
+
+                // 攻受
+                Regex gs = new Regex("(.+)攻(.+)受");
+                var matchgs = gs.Match(msg);
+                if (matchgs.Success)
+                {
+                    try
+                    {
+                        string res = modes.getGongshou(matchgs.Groups[1].ToString(), matchgs.Groups[2].ToString());
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch { }
+                }
+
+
                 // 翻译
                 Regex transreg = new Regex("(\\S+)译(\\S+)\\s+");
                 var transmatch = transreg.Match(msg);
@@ -531,36 +684,202 @@ namespace Native.Csharp.App.Event
                     }
                 }
 
-                //Regex qz = new Regex("(.+)谴责(.+)的(.+)");
-                //var matchqz = qz.Match(msg);
-                //if (matchqz.Success)
-                //{
-                //    try
-                //    {
-                //        string res = modes.getQianze(matchqz.Groups[1].ToString(), matchqz.Groups[2].ToString(), matchqz.Groups[3].ToString());
-                //        if (res.Length > 0)
-                //        {
-                //            if (isGroup) sendGroup(group, user, res);
-                //            else sendPrivate(user, res);
-                //            return true;
-                //        }
-                //    }
-                //    catch { }
-                //}
-            }
+                // 才八点
+                if (msg.StartsWith("现在几点") || msg.StartsWith("几点了"))
+                {
+                    try
+                    {
+                        string res = $"现在是{bilibili.getNowClockCountry(20)}";
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch { }
+                }
 
-            if (config.groupIsNot(group, "温和"))
+                // BTC货币系统
+                if (isGroup && msg == "签到")
+                {
+                    btc.dailyAttendance(group, user);
+                    //racehorse.dailyAttendance(group, user);
+                    return true;
+                }
+
+                Regex zzs = new Regex("给(.+)转(\\d+)");
+                var matchzzs = zzs.Match(msg);
+                if (matchzzs.Success)
+                {
+                    try
+                    {
+                        string target = matchzzs.Groups[1].ToString();
+                        long targetqq = -1;
+                        if (!long.TryParse(target, out targetqq)) targetqq = getQQNumFromGroup(group, target.Trim());
+                        string res = "";
+                        if (targetqq <= 0)
+                        {
+                            res = $"群里好像没人叫 {target} ，转账失败。";
+                        }
+                        else
+                        {
+                            long money = long.Parse(matchzzs.Groups[2].ToString());
+                            res = btc.transMoney(user, targetqq, money);
+
+                        }
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch { }
+                }
+
+
+                // 占卜
+                if (msg.StartsWith("占卜"))
+                {
+                    try
+                    {
+                        string res = divi.getZhouYi();
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch { }
+                }
+
+                // 赛马
+                if (config.groupIs(group, "可赛马") || config.groupIs(group, "测试"))
+                {
+                    if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
+                    {
+                        sendGroup(group, user, "赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”");
+                        return true;
+                    }
+                    if (isGroup && (msg == "赛马"))
+                    {
+                        if (config.groupIs(group, "测试") || racehorse.isAllow(group))
+                        {
+                            int num = 5;
+                            racehorse.initMatch(group, num);
+                            return true;
+                        }
+                    }
+                    if (isGroup && (msg == "富豪榜" || msg == "富人榜"))
+                    {
+                        racehorse.showRichest(group);
+                        return true;
+                    }
+                    if (isGroup && msg == "胜率榜")
+                    {
+                        racehorse.showBigWinner(group);
+                        return true;
+                    }
+                    if (isGroup && msg == "穷人榜")
+                    {
+                        racehorse.showPoorest(group);
+                        return true;
+                    }
+                    if (isGroup && msg == "败率榜")
+                    {
+                        racehorse.showBigLoser(group);
+                        return true;
+                    }
+                    if (isGroup && msg == "赌狗榜")
+                    {
+                        racehorse.showMostPlayTime(group);
+                        return true;
+                    }
+                }
+                //else
+                //{
+                //    sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
+                //}
+
+
+                if (isGroup && msg == "个人信息")
+                {
+                    string res = $"{btc.getUserInfo(user)}\r\n{racehorse.getRHInfo(group, user)}";
+                    if (res.Length > 0)
+                    {
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+                if (isGroup)
+                {
+                    var trygetbet = Regex.Match(msg, @"(\d+)号\s*(\d+)");
+                    if (trygetbet.Success)
+                    {
+                        try
+                        {
+                            int roadnum = int.Parse(trygetbet.Groups[1].ToString());
+                            int money = int.Parse(trygetbet.Groups[2].ToString());
+                            racehorse.addBet(group, user, roadnum, money);
+                            return true;
+                        }
+                        catch
+                        {
+                        }
+                    }
+
+                }
+
+
+
+
+            }
+            
+
+
+           
+
+            if (config.groupIs(group, "测试"))
             {
+                // 测试群专属
+
+                Regex qz = new Regex("(.+)谴责(.+)的(.+)");
+                var matchqz = qz.Match(msg);
+                if (matchqz.Success)
+                {
+                    try
+                    {
+                        string res = modes.getQianze(matchqz.Groups[1].ToString(), matchqz.Groups[2].ToString(), matchqz.Groups[3].ToString());
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+                }
+
+
+
+
+
                 if (msg.StartsWith("讽刺"))
                 {
                     string res = "";
                     try
                     {
-                        var items = msg.Substring(2).Trim().Split(new char[] { ',', '，' },StringSplitOptions.RemoveEmptyEntries);
+                        var items = msg.Substring(2).Trim().Split(new char[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries);
                         if (items.Length >= 1)
                         {
                             Dictionary<string, string> pairs = new Dictionary<string, string>();
-                            foreach(var item in items)
+                            foreach (var item in items)
                             {
                                 var pair = item.Split(new char[] { ':', '：', '=', ' ' }, StringSplitOptions.RemoveEmptyEntries);
                                 if (pair.Length == 2) pairs[pair[0]] = pair[1];
@@ -579,159 +898,62 @@ namespace Native.Csharp.App.Event
                         return true;
                     }
                 }
-            }
 
 
-            // 才八点
-            if(msg.StartsWith("现在几点") || msg.StartsWith("几点了"))
-            {
-                try
-                {
-                    string res = $"现在是{bilibili.getNowClockCountry(20)}";
-                    if (res.Length > 0)
-                    {
-                        if (isGroup) sendGroup(group, user, res);
-                        else sendPrivate(user, res);
-                        return true;
-                    }
-                }
-                catch { }
-            }
 
-            // BTC货币系统
-            if (isGroup && msg == "签到")
-            {
-                btc.dailyAttendance(group, user);
-                //racehorse.dailyAttendance(group, user);
-                return true;
-            }
-
-            Regex zzs = new Regex("给(.+)转(\\d+)");
-            var matchzzs = zzs.Match(msg);
-            if (matchzzs.Success)
-            {
-                try
-                {
-                    string target = matchzzs.Groups[1].ToString();
-                    long targetqq = -1;
-                    if (!long.TryParse(target, out targetqq)) targetqq = getQQNumFromGroup(group, target.Trim());
-                    string res = "";
-                    if (targetqq <= 0)
-                    {
-                        res = $"群里好像没人叫 {target} ，转账失败。";
-                    }
-                    else
-                    {
-                        long money = long.Parse(matchzzs.Groups[2].ToString());
-                        res = btc.transMoney(user, targetqq, money);
-
-                    }
-                    if (res.Length > 0)
-                    {
-                        if (isGroup) sendGroup(group, user, res);
-                        else sendPrivate(user, res);
-                        return true;
-                    }
-                }
-                catch { }
-            }
-
-
-            // 占卜
-            if (msg.StartsWith("占卜"))
-            {
-                try
-                {
-                    string res = divi.getZhouYi();
-                    if (res.Length > 0)
-                    {
-                        if (isGroup) sendGroup(group, user, res);
-                        else sendPrivate(user, res);
-                        return true;
-                    }
-                }
-                catch { }
-            }
-
-            // 赛马
-            if(!config.groupIs(group, "禁赛马"))
-            {
-                if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
-                {
-                    sendGroup(group, user, "赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”");
-                    return true;
-                }
-                if (isGroup && (msg == "赛马" ))
-                {
-                    if (config.groupIs(group, "测试") || racehorse.isAllow(group))
-                    {
-                        int num = 5;
-                        racehorse.initMatch(group, num);
-                        return true;
-                    }
-                }
-                if (isGroup && (msg == "富豪榜" || msg == "富人榜"))
-                {
-                    racehorse.showRichest(group);
-                    return true;
-                }
-                if (isGroup && msg == "胜率榜")
-                {
-                    racehorse.showBigWinner(group);
-                    return true;
-                }
-                if (isGroup && msg == "穷人榜")
-                {
-                    racehorse.showPoorest(group);
-                    return true;
-                }
-                if (isGroup && msg == "败率榜")
-                {
-                    racehorse.showBigLoser(group);
-                    return true;
-                }
-                if (isGroup && msg == "赌狗榜")
-                {
-                    racehorse.showMostPlayTime(group);
-                    return true;
-                }
-            }
-            //else
-            //{
-            //    sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
-            //}
-            
-
-            if (isGroup && msg == "个人信息")
-            {
-                string res = $"{btc.getUserInfo(user)}\r\n{racehorse.getRHInfo(group, user)}";
-                if (res.Length > 0)
-                {
-                    if (isGroup) sendGroup(group, user, res);
-                    else sendPrivate(user, res);
-                    return true;
-                }
-            }
-            if (isGroup)
-            {
-                var trygetbet = Regex.Match(msg, @"(\d+)号\s*(\d+)");
-                if (trygetbet.Success)
+                // 数字论证
+                Regex szlzreg = new Regex("数字论证\\s*(\\S+)");
+                var szlzres = szlzreg.Match(msg);
+                if (szlzres.Success)
                 {
                     try
                     {
-                        int roadnum = int.Parse(trygetbet.Groups[1].ToString());
-                        int money = int.Parse(trygetbet.Groups[2].ToString());
-                        racehorse.addBet(group, user, roadnum, money);
+                        string lzdata = szlzres.Groups[1].ToString();
+                        string lz1, lz2;
+                        if (!lzdata.Contains("-"))
+                        {
+                            lz1 = lzdata.Trim();
+                            lz2 = "";
+                        }
+                        else
+                        {
+                            lz1 = lzdata.Split('-')[0].Trim();
+                            lz2 = lzdata.Split('-')[1].Trim();
+                        }
+                        bool proofsuccess = proof.getProofString(lz1, lz2);
+                        if (proofsuccess)
+                        {
+                            if (isGroup) sendGroup(group, user, proof.finalproof);
+                            else sendPrivate(user, proof.finalproof);
+                        }
+                        else
+                        {
+                            string resspeak = "论不出来，我紫菜";
+                            if (isGroup) sendGroup(group, user, resspeak);
+                            else sendPrivate(user, resspeak);
+                        }
                         return true;
                     }
-                    catch
-                    {
-                    }
-                }
+                    catch { }
 
+                }
             }
 
-            return false;
+
+
+            //  闲聊开关
+            if (config.groupIs(group, "测试") 
+                || config.personIs(user, "管理员") 
+                || (!config.testonly && (config.groupIs(group, "闲聊") || !isGroup)))
+            {
+                return false;
+            }
+            else
+            {
+                // dont chat
+                return true;
+            }
+
         }
 
         /// <summary>
@@ -816,15 +1038,17 @@ namespace Native.Csharp.App.Event
             config.playTimeGroup += 1;
 
             string msg = "";
-            //string modeName = modes.getGroupMode(group);
-            //switch (modeName)
-            //{
-            //    case "正常": msg += getAnswerNormal(user, question); break;
-            //    case "混沌": msg += modes.getAnswerChaos(user, question); break;
-            //    case "喷人": msg += modes.getPen(group, user); return; break;
-            //    case "测试": msg += modes.getHistoryReact(group, user); return; break;
-            //    default: msg += modes.getAnswerWithMode(user, question, modeName); break;
-            //}
+            msg = itema.getResult(question);
+
+            string modeName = modes.getGroupMode(group);
+            switch (modeName)
+            {
+                case "正常": msg += getAnswerNormal(user, question); break;
+                case "混沌": msg += modes.getAnswerChaos(user, question); break;
+                case "喷人": msg += modes.getPen(group, user); return; break;
+                case "测试": msg += modes.getHistoryReact(group, user); return; break;
+                default: msg += modes.getAnswerWithMode(user, question, modeName); break;
+            }
             msg = ItemParser.getHexie(msg);
 
 
@@ -855,16 +1079,25 @@ namespace Native.Csharp.App.Event
             config.playTimePrivate += 1;
 
             string msg = "";
-            string modeName = modes.getUserMode(user);
-            switch (modeName)
+            if (config.personIs(user, "管理员"))
             {
-                case "正常": msg += getAnswerNormal(user, question); break;
-                case "混沌": msg += modes.getAnswerChaos(user, question); break;
-                //case "喷人": msg += modes.getPen(-1, user); return; break;
-                //case "测试": msg += modes.getHistoryReact(-1, user); return; break;
-                default: msg += modes.getAnswerWithMode(user, question, modeName); break;
+                msg = itema.getResult(question);
             }
+            else
+            {
+                string modeName = modes.getUserMode(user);
+                switch (modeName)
+                {
+                    case "正常": msg += getAnswerNormal(user, question); break;
+                    case "混沌": msg += modes.getAnswerChaos(user, question); break;
+                    //case "喷人": msg += modes.getPen(-1, user); return; break;
+                    //case "测试": msg += modes.getHistoryReact(-1, user); return; break;
+                    default: msg += modes.getAnswerWithMode(user, question, modeName); break;
+                }
+            }
+
             msg = ItemParser.getHexie(msg);
+            
 
             if (string.IsNullOrWhiteSpace(msg)) return;
 
@@ -971,21 +1204,21 @@ namespace Native.Csharp.App.Event
         public string getWelcomeString()
         {
             tryInit();
-            return "用法：\r\n" +
-                $"~想在群里使用，就at我或者打字开头加“{config.askName}”，再加内容。私聊乐我的话直接发内容。\r\n" +
-                "~以下是常用功能。根据群配置不同，有的功能可能无法提供。\r\n" +
+            return "" +
+                $"想在群里使用，就at我或者打字开头加“{config.askName}”，再加内容。私聊乐我的话直接发内容。\r\n" +
+                "以下是群常用功能。私聊可以闲聊。\r\n" +
                 //"~状态查看：“状态”\r\n" +
                 //"~模式更换：“模式列表”、“xx模式on”\r\n" +
-                "~掷骰：“rd 成功率”“r3d10 攻击力”\r\n" +
-                "~多语翻译：“汉译法译俄 xxxx”\r\n" +
-                "~天气预报：“北京明天天气”\r\n" +
-                "~B站直播搜索：“绘画区谁在播”“虚拟区有多少B限”“xxx在播吗”\r\n" +
-                "~赛马：“赛马介绍”“签到”“个人信息”\r\n" +
-                "~生成攻受文：“A攻B受”\r\n" +
+                "掷骰：“rd 成功率”“r3d10 攻击力”\r\n" +
+                "多语翻译：“汉译法译俄 xxxx”\r\n" +
+                //"~天气预报：“北京明天天气”\r\n" +
+                "B站live搜索：“绘画区谁在播”“虚拟区有多少B限”“xxx在播吗”\r\n" +
+                //"~赛马：“赛马介绍”“签到”“个人信息”\r\n" +
+                "生成攻受文：“A攻B受”\r\n" +
                 //"~生成谴责：“A谴责B的C”\r\n" +
                // "~生成笑话：“讽刺 本国=A国，好人=甲，坏人=乙，事件=xx”\r\n" +
-                "~生成随机汉字：“随机5*4”\r\n" +
-                "~周易占卜：“占卜 xxx”\r\n";
+                //"生成随机汉字：“随机5*4”\r\n" +
+                "周易占卜：“占卜 xxx”\r\n";
         }
     }
 
@@ -1032,6 +1265,10 @@ namespace Native.Csharp.App.Event
 
         private void sendPrivate(long user, string msg)
         {
+            if (mmdk.config.ignoreall)
+            {
+                return;
+            }
             Common.CqApi.SendPrivateMessage(user, msg);
         }
 
@@ -1091,16 +1328,19 @@ namespace Native.Csharp.App.Event
 
         private void sendGroup(long group, long user, string msg)
         {
-
+            if (mmdk.config.ignoreall)
+            {
+                return;
+            }
             if (user > 0)
             {
                 msg = Common.CqApi.CqCode_At(user) + msg;// Common.CqApi.GetMemberInfo(group, user).Nick + " " + msg;// Common.CqApi.CqCode_At(user) + msg;
 
             }
-            if (mmdk.config.useGroupMsgBuf)
+            if (mmdk.config.useGroupMsgBuf > 0)
             {
                 msg = "\r\n" + msg;
-                for (int i = 0; i < 54; i++)    // 33  54
+                for (int i = 0; i < mmdk.config.useGroupMsgBuf; i++)    // 33  54
                 {
                     msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
                 }

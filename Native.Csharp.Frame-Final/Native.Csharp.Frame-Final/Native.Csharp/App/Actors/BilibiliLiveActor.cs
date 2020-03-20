@@ -270,16 +270,56 @@ namespace Native.Csharp.App.Actors
             return "";
         }
 
+        public string[] getNames(string username)
+        {
+            string[] tail = { "Official", "official", "Channel", "channel", "_Official", "_Channel" };
+            List<string> finds = new List<string>();
+            List<string> findsnext = new List<string>();
+            Dictionary<string, int> names = new Dictionary<string, int>();
+
+            finds.Add(username);
+            foreach (var t in tail) finds.Add(username + t);
+
+            bool finish = false;
+            while (!finish)
+            {
+                finish = true;
+                foreach(var target in finds)
+                {
+                    if (!names.ContainsKey(target))
+                    {
+                        finish = false;
+                        names[target] = 0;
+                    }
+                    if (nameDict.ContainsKey(target))
+                    {
+                        var next = nameDict[target];
+                        if (!names.ContainsKey(next))
+                        {
+                            finish = false;
+                            findsnext.Add(next);
+                        }
+                    }
+                }
+                finds = findsnext;
+                findsnext = new List<string>();
+            }
+
+            return names.Keys.ToArray();
+        }
+
         public string getLiveInfo(string username)
         {
             //readRooms();
             int findmaxtime = 15;
+            
+           // Directory<string, string
             while (nameDict.ContainsKey(username) && findmaxtime-- >=0) username = nameDict[username];
             //FileIOActor.log(username + " <- name");
-            string[] tail = new string[] { "", "Official", "official", "Channel", "channel", "_Official", "_Channel" };
-            foreach(var t in tail)
+            
+            foreach(var un in getNames(username))
             {
-                string un = username + t;
+                //string un = username + t;
                 if (roomDict.ContainsKey(un))
                 {
                     string roomid = roomDict[un];

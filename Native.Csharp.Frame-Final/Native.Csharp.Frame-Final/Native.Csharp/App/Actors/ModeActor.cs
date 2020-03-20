@@ -104,6 +104,9 @@ namespace Native.Csharp.App.Actors
         string modeGroupName = "_mode_group.txt";
         string defaultAnswerName = "_defaultanswer.txt";
 
+        string sstvName = "sstv.jpg";
+        public List<string> sstv = new List<string>();
+
         public Dictionary<string, ModeInfo> modedict = new Dictionary<string, ModeInfo>();
         List<string> defaultAnswers = new List<string>();
         public Dictionary<long, string> privatemode = new Dictionary<long, string>();
@@ -293,6 +296,9 @@ namespace Native.Csharp.App.Actors
 
                 // default
                 defaultAnswers = FileIOActor.readLines(path + defaultAnswerName).ToList();
+
+                // sstv
+                sstv = FileIOActor.readLines(path + sstvName).ToList();
             }
             catch (Exception e)
             {
@@ -589,14 +595,19 @@ namespace Native.Csharp.App.Actors
                                 targetuser = items[1];
                                 string msg = items[2].Trim();
                                 if (msg.Contains("2715126750") || msg.Contains("2045098852")) continue;
-                                if (msg.Contains("维尼") || msg.Contains("支那") || 
-                                    msg.Contains("本群") || msg.Contains("[CQ") || 
-                                    msg.Contains("被管理员") || msg.Contains("你的QQ暂不支持") || msg.Contains("请使用新版手机QQ") || msg.Contains("☆西方苦瓜公主☆"))
-                                    continue;
+                                bool isSstv = false;
+                                foreach(var word in sstv)
+                                {
+                                    if (!string.IsNullOrWhiteSpace(word) && msg.Contains(word))
+                                    {
+                                        isSstv = true;
+                                        break;
+                                    }
+                                }
+                                if (isSstv) continue;
                                 msg = Regex.Replace(msg, "\\[CQ\\:[^\\]]+\\]", "");
-                                if (msg.Trim().StartsWith("苦瓜")) continue;
-                                msg = msg.Trim();
-                                if (msg.Length <= 0) continue;
+                                if (msg.Trim().StartsWith("我苦") || msg.Trim().StartsWith("苦瓜")) continue;
+                                if (string.IsNullOrWhiteSpace(msg.Trim())) continue;
                                 //msg = Regex.Replace(msg, "\\[CQ\\:image[^\\]]+\\]", "");
                                 outputMessage(group, 0, msg);
                                 find = true;

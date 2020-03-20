@@ -102,6 +102,7 @@
     <Compile Include="App\Actors\DivinationActor.cs" />
     <Compile Include="App\Actors\EsuActor.cs" />
     <Compile Include="App\Actors\FileIOActor.cs" />
+    <Compile Include="App\Actors\ItemActor.cs" />
     <Compile Include="App\Actors\ItemParser.cs" />
     <Compile Include="App\Actors\ModeActor.cs" />
     <Compile Include="App\Actors\RacehorseActor.cs" />
