@@ -15,6 +15,7 @@ namespace Native.Csharp.App.Actors
         string path = "";
         string userDictName = "btclist.txt";
         string benefitDictName = "benefitlist.txt";
+        public static string unitName = "比特币";
 
         public sendQQGroupMsgHandler outputMessage;
         public getQQNickHandler getQQNick;
@@ -140,7 +141,7 @@ namespace Native.Csharp.App.Actors
                 int money = rand.Next(30, 114);
                 u.money += money;
 
-                outputMessage(group, userqq, $"您今日领取失业补助{money}枚比特币，现在账上一共{u.money}枚");
+                outputMessage(group, userqq, $"您今日领取失业补助{money}枚{unitName}，现在账上一共{u.money}枚");
                 save();
             }
             else
@@ -162,18 +163,18 @@ namespace Native.Csharp.App.Actors
             var user2 = get(targetqq);
             if(user1==null || user2 == null)
             {
-                return $"用户{targetqq}没有比特币账户";
+                return $"用户{targetqq}没有{unitName}账户";
             }
             if (user1.money < money)
             {
-                return $"您的余额不足。当前余额{user1.money}比特币";
+                return $"您的余额不足。当前余额{user1.money}{unitName}";
             }
             try
             {
                 user1.money -= money;
                 user2.money += money;
                 save();
-                return $"您向{user2.qq}成功转账{money}元。余额{user1.money}比特币";
+                return $"您向{user2.qq}成功转账{money}元。余额{user1.money}{unitName}";
             }
             catch
             {
@@ -184,7 +185,7 @@ namespace Native.Csharp.App.Actors
         public string getUserInfo(long userqq)
         {
             var u = get(userqq);
-            return $"您的账上共有{u.money}枚比特币。共领取失业补助{u.benefit.alltime}次，今日失业补助{(u.benefit.isTodayAlreadyGet() ? "已领取" : "还未领取")}";
+            return $"您的账上共有{u.money}枚{unitName}。共领取失业补助{u.benefit.alltime}次，今日失业补助{(u.benefit.isTodayAlreadyGet() ? "已领取" : "还未领取")}";
         }
     }
 

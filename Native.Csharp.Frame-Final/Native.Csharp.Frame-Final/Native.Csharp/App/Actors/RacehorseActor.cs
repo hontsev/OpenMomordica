@@ -190,14 +190,14 @@ namespace Native.Csharp.App.Actors
             string res = "";
             if (_money >= _user.user.money)
             {
-                res = $"all in!把手上的{_user.user.money}枚比特币都押了{_roadnum}号马";
+                res = $"all in!把手上的{_user.user.money}枚{BTCActor.unitName}都押了{_roadnum}号马";
                 _money = _user.user.money;
                 _user.user.money = 0;
             }
             else
             {
                 _user.user.money -= _money;
-                res = $"成功在{_roadnum}号马下注{_money}枚比特币，账户余额{_user.user.money}";
+                res = $"成功在{_roadnum}号马下注{_money}枚{BTCActor.unitName}，账户余额{_user.user.money}";
 
             }
             if (!bets[_user].ContainsKey(_roadnum))
@@ -337,7 +337,7 @@ namespace Native.Csharp.App.Actors
                 {
                     int money = (int)(Math.Ceiling(bets[winner][winnerroad] * bl)) + 1;
                     winner.user.money += money;
-                    sb.Append($"{getQQNick(winner.user.qq)}赢了{money}枚比特币！恭喜\r\n");
+                    sb.Append($"{getQQNick(winner.user.qq)}赢了{money}枚{BTCActor.unitName}！恭喜\r\n");
                     winner.wintime += 1;
                 }
             }
@@ -764,8 +764,8 @@ namespace Native.Csharp.App.Actors
         {
             if (!ruuserinfo.ContainsKey(userqq)) ruuserinfo[userqq] = new RHUserInfo(btc.get(userqq), 0, 0, 0);
             var u = ruuserinfo[userqq];
-            return $"您在赌马上消费过{u.hrmoney}枚比特币，共下注{u.losetime + u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%";
-            //outputMessage(group, userqq, $"您在赌马上消费过{u.hrmoney}枚比特币，共下注{u.losetime+u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%");
+            return $"您在赌马上消费过{u.hrmoney}枚{BTCActor.unitName}，共下注{u.losetime + u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%";
+            //outputMessage(group, userqq, $"您在赌马上消费过{u.hrmoney}枚{BTCActor.unitName}，共下注{u.losetime+u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%");
             // save();
         }
     }

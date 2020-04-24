@@ -3,6 +3,7 @@ using Native.Csharp.App.EventArgs;
 using Native.Csharp.App.Interface;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -24,6 +25,7 @@ namespace Native.Csharp.App.Event
         public delegate string getQQNickFromGroupHandler(long group, long qq);
         public delegate long getQQNumFromGroupHandler(long group, string nick);
         public delegate long getQQGroupNumber();
+        public delegate string getQQImageHandler(string msg);
 
         public sendStringHandler log;
         public sendQQPrivateMsgHandler sendPrivate;
@@ -32,6 +34,7 @@ namespace Native.Csharp.App.Event
         public getQQNickFromGroupHandler getQQNickFromGroup;
         public getQQNumFromGroupHandler getQQNumFromGroup;
         public getQQGroupNumber getQQGroupNum;
+        public getQQImageHandler getQQImage;
 
         private static MomordicaMain _mmdk;
 
@@ -46,6 +49,7 @@ namespace Native.Csharp.App.Event
         string DataBTCPath = "\\DataBTC\\";
         string DataGoogleTransPath = "\\DataGoogleTrans\\";
         string DataDivinationPath = "\\DataDivination\\";
+        string DataMMDKWPath = "\\DataMmdkWorld\\";
 
         bool inited = false;
         object dealmsgMutex = new object();
@@ -63,6 +67,7 @@ namespace Native.Csharp.App.Event
         BTCActor btc = new BTCActor();
         DivinationActor divi = new DivinationActor();
         ItemActor itema = new ItemActor();
+        MMDKWorldActor mmdkw = new MMDKWorldActor();
 
         static MomordicaMain()
         {
@@ -102,6 +107,7 @@ namespace Native.Csharp.App.Event
                         trans.init(rootDict + DataGoogleTransPath);
                         divi.init(rootDict + DataDivinationPath);
                         itema.init(rootDict + DataBaiduPath);
+                        mmdkw.init(sendGroup, getQQNick, btc, rootDict + DataMMDKWPath);
 
                         inited = true;
 
@@ -302,8 +308,10 @@ namespace Native.Csharp.App.Event
 
                                 if (targetItem.Length >= 2)
                                 {
-                                    long targetTime;
-                                    long.TryParse(targetItem[0], out targetTime);
+                                    long targetTime = 10;
+                                    //int maxNum;
+                                    long.TryParse(targetItem[1], out targetTime);
+                                    //int.TryParse(targetItem[1], out maxNum);
                                     config.personAddTag(targetUser, $"有限：{targetTime} {targetTime} {DateTime.Now.Ticks}");
                                 }
 
@@ -363,7 +371,76 @@ namespace Native.Csharp.App.Event
                 {
                     FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
                 }
-                return true;
+                
+            }
+
+            //if(msg.StartsWith("转换"))
+            //{
+
+            //}
+            int imgindex = msg.IndexOf("[CQ:image,file=");
+            if (imgindex >= 0)
+            {
+                int imgindex2 = msg.IndexOf("]", imgindex + 15);
+                if (imgindex >= 0 && imgindex2 >= 0)
+                {
+                    // have img
+                    try
+                    {
+                        string imgname = msg.Substring(imgindex + 15, imgindex2 - imgindex - 15);
+                        string imgtmp = getQQImage(imgname);
+                        string othermsg = msg.Substring(0, imgindex) + msg.Substring(imgindex2 + 1);
+                        int w = 50;
+                        int h = 20;
+                        if (!string.IsNullOrWhiteSpace(imgtmp))
+                        {
+                            string imgres = "";
+                            Bitmap img = new Bitmap(imgtmp);
+                            if ((double)h / w <= (double)img.Height / img.Width) h = (int)((double)w * img.Height / img.Width);
+                            else w = (int)((double)h * img.Width / img.Height);
+                            if (!string.IsNullOrWhiteSpace(othermsg))
+                            {
+                                //if (isGroup) sendGroup(group, -1, "---" + othermsg + "---");
+                                var items = othermsg.Split(new char[] { ' ', ',', '，', '*' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (items.Length >= 2)
+                                {
+                                    int.TryParse(items[0], out w);
+                                    int.TryParse(items[1], out h);
+                                }
+                            }
+                            if (w <= 0 || w > img.Width) w = Math.Min(50, img.Width);
+                            if (h <= 0 || h > img.Height) h = Math.Min(20, img.Height);
+                            
+                            imgres = $"原图{img.Width}*{img.Height}，字符画{w}*{h}";
+                            if (isGroup) sendGroup(group, -1, imgres);
+                            else sendPrivate(user, imgres);
+
+                            imgres = ImageConvertHelper.Generate(img, img.Width / w, img.Height / h);
+
+                            if (isGroup) sendGroup(group, -1, imgres);
+                            else sendPrivate(user, imgres);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        string imgres = "分析失败 ";
+                        if (isGroup) sendGroup(group, -1, imgres);
+                        else sendPrivate(user, imgres);
+                    }
+                    return true;
+                }
+
+            }
+
+
+            if (config.groupIs(group, "放映厅"))
+            {
+                
+
+                if (mmdkw.cmd(group, msg))
+                {
+                    return true;
+                }
             }
 
             if (!config.testonly || config.groupIs(group, "测试"))
@@ -605,6 +682,71 @@ namespace Native.Csharp.App.Event
                     return true;
                 }
 
+                // 对联
+                if (msg.StartsWith("上联"))
+                {
+                    msg = msg.Substring(2).Trim();
+                    try
+                    {
+                        string res = modes.getDui(msg);
+                        if (string.IsNullOrWhiteSpace(res))
+                        {
+                            res = "？";
+                        }
+                        else
+                        {
+                            res = "下联  " + res;
+                        }
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                    catch
+                    {
+
+                    }
+                }
+
+                // 反转
+                if (msg.StartsWith("反转"))
+                {
+                    msg = msg.Substring(2).Trim();
+                    try
+                    {
+                        string res = "";
+                        foreach (var c in msg) res = c + res;
+                        if (!string.IsNullOrWhiteSpace(res))
+                        {
+
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+                }
+
+                // 特殊符号操作
+                try
+                {
+                    string res = modes.getSymbolDeal(msg);
+                    if (!string.IsNullOrWhiteSpace(res))
+                    {
+
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
+                        return true;
+                    }
+                }
+                catch
+                {
+
+                }
+   
+
                 // 随机汉字
                 if (msg.StartsWith("随机"))
                 {
@@ -660,6 +802,68 @@ namespace Native.Csharp.App.Event
                         }
                     }
                     catch { }
+                }
+
+                if (msg.StartsWith("什么是"))
+                {
+                    
+                    try
+                    {
+                        string key = msg.Substring(3).Trim();
+                        while (key.EndsWith("？")) key = key.Substring(0, key.Length - 1);
+                        while (key.EndsWith("?")) key = key.Substring(0, key.Length - 1);
+                        string res = modes.getSpam(key);
+                        if (res.Length > 0)
+                        {
+                            res = res.Replace("【D】", config.myQQ.ToString()).Replace("【C】", config.askName);
+
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+
+                }
+                if (msg.StartsWith("藏头"))
+                {
+                    try
+                    {
+                        msg = ItemParser.removeSymbol(msg.Substring(2).Trim());
+                        string res = modes.getCangtou(msg);
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+                }
+                if (msg.StartsWith("藏尾"))
+                {
+                    try
+                    {
+                        msg = ItemParser.removeSymbol(msg.Substring(2).Trim());
+                        string res = modes.getCangwei(msg);
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+
+                    }
                 }
 
 
@@ -756,7 +960,7 @@ namespace Native.Csharp.App.Event
                 }
 
                 // 赛马
-                if (config.groupIs(group, "可赛马") || config.groupIs(group, "测试"))
+                if (!config.groupIs(group, "禁赛马"))
                 {
                     if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
                     {
@@ -1045,8 +1249,10 @@ namespace Native.Csharp.App.Event
             {
                 case "正常": msg += getAnswerNormal(user, question); break;
                 case "混沌": msg += modes.getAnswerChaos(user, question); break;
+                case "小万邦":msg += modes.getGong();break;
                 case "喷人": msg += modes.getPen(group, user); return; break;
                 case "测试": msg += modes.getHistoryReact(group, user); return; break;
+                case "云杰":msg += modes.getZYJ(question);break;
                 default: msg += modes.getAnswerWithMode(user, question, modeName); break;
             }
             msg = ItemParser.getHexie(msg);
@@ -1090,6 +1296,8 @@ namespace Native.Csharp.App.Event
                 {
                     case "正常": msg += getAnswerNormal(user, question); break;
                     case "混沌": msg += modes.getAnswerChaos(user, question); break;
+                    case "小万邦": msg += modes.getGong(); break;
+                    case "云杰": msg += modes.getZYJ(question); break;
                     //case "喷人": msg += modes.getPen(-1, user); return; break;
                     //case "测试": msg += modes.getHistoryReact(-1, user); return; break;
                     default: msg += modes.getAnswerWithMode(user, question, modeName); break;
@@ -1255,6 +1463,7 @@ namespace Native.Csharp.App.Event
                     mmdk.getQQNickFromGroup = getQQNickFromGroup;
                     mmdk.getQQNumFromGroup = getQQNumFromGroup;
                     mmdk.getQQGroupNum = getQQGroupNum;
+                    mmdk.getQQImage = getQQImage;
                     mmdk.tryInit();
 
                 }
@@ -1281,6 +1490,18 @@ namespace Native.Csharp.App.Event
             catch (Exception e)
             {
                 return qq.ToString();
+            }
+        }
+
+        private string getQQImage(string msg)
+        {
+            try
+            {
+                return Common.CqApi.ReceiveImage(msg);
+            }
+            catch (Exception e)
+            {
+                return "";
             }
         }
 

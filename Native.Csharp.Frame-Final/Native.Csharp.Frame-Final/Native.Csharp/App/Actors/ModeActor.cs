@@ -121,6 +121,9 @@ namespace Native.Csharp.App.Actors
         List<string> chaosMotion = new List<string>();
         List<string> chaosXwb = new List<string>();
 
+        string yunjief = "云杰说道.txt";
+        List<string> yjsd = new List<string>();
+
         string randomch = "随机-随机汉字.txt";
         string randomChar = "";
 
@@ -139,6 +142,30 @@ namespace Native.Csharp.App.Actors
 
         string penName = "pen.txt";
         List<string> penlist = new List<string>();
+
+        string duiP2f = "pairc2.txt";
+        string duiP1f = "pairc.txt";
+        Dictionary<string, string[]> cf = new Dictionary<string, string[]>();
+        Dictionary<string, string[]> cf2 = new Dictionary<string, string[]>();
+
+        string junkf = "spam.txt";
+        List<List<string>> junks = new List<List<string>>();
+
+        string symbolf = "symboltemplate.txt";
+        Dictionary<string, List<string>> symbollist = new Dictionary<string, List<string>>();
+
+        string pyf = "pinyin.txt";
+        string cangtou5f = "allline5.txt";
+        string cangtou7f = "allline7.txt";
+        Dictionary<char, List<string>> py = new Dictionary<char, List<string>>();
+        Dictionary<char, List<string>> cangtou5 = new Dictionary<char, List<string>>();
+        Dictionary<char, List<string>> cangtou7 = new Dictionary<char, List<string>>();
+        Dictionary<string, List<string>> cangtou5py = new Dictionary<string, List<string>>();
+        Dictionary<string, List<string>> cangtou7py = new Dictionary<string, List<string>>();
+        Dictionary<char, List<string>> cangwei5 = new Dictionary<char, List<string>>();
+        Dictionary<char, List<string>> cangwei7 = new Dictionary<char, List<string>>();
+        Dictionary<string, List<string>> cangwei5py = new Dictionary<string, List<string>>();
+        Dictionary<string, List<string>> cangwei7py = new Dictionary<string, List<string>>();
 
         public sendQQGroupMsgHandler outputMessage;
 
@@ -220,6 +247,9 @@ namespace Native.Csharp.App.Actors
                 // xwb
                 chaosXwb = FileIOActor.readLines(path + chaosw).ToList();
 
+                // yunjieshuodao
+                yjsd = FileIOActor.readLines(path + yunjief).ToList();
+
                 // random
                 randomChar = FileIOActor.readTxtFile(path + randomch, Encoding.UTF8).Trim();
 
@@ -293,6 +323,159 @@ namespace Native.Csharp.App.Actors
 
                 // pen
                 penlist = FileIOActor.readLines(path + penName, Encoding.UTF8).ToList();
+
+                // duilian
+                var lines = File.ReadAllLines(path+duiP1f, Encoding.UTF8);
+                foreach (var line in lines)
+                {
+                    var items = line.Split('\t');
+                    var items2 = items[1].Split(',');
+                    cf[items[0]] = items2;
+                }
+                lines = File.ReadAllLines(path + duiP2f, Encoding.UTF8);
+                foreach (var line in lines)
+                {
+                    var items = line.Split('\t');
+                    var items2 = items[1].Split(',');
+                    cf2[items[0]] = items2;
+                }
+
+                // junk
+                lines = File.ReadAllLines(path + junkf, Encoding.UTF8);
+                
+                List<string> nowline=new List<string>();
+                foreach(var line in lines)
+                {
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        if(nowline.Count > 0)
+                        {
+                            junks.Add(nowline);
+                            nowline = new List<string>();
+                        }
+                    }
+                    else
+                    {
+                        nowline.Add(line.Trim());
+                    }
+                }
+                if (nowline.Count > 0)
+                {
+                    junks.Add(nowline);
+                }
+
+
+                // symbols
+                lines = File.ReadAllLines(path + symbolf, Encoding.UTF8);
+                symbollist = new Dictionary<string, List<string>>();
+                foreach(var line in lines)
+                {
+                    if (!string.IsNullOrWhiteSpace(line) && !line.StartsWith("/"))
+                    {
+                        var items = line.Trim().Split('\t');
+                        if (items.Length >= 2)
+                        {
+                            if (!symbollist.ContainsKey(items[0])) symbollist[items[0]] = new List<string>();
+                            symbollist[items[0]].Add(items[1]);
+                        }
+                    }
+                }
+
+                // cangtou
+                lines = File.ReadAllLines(path + pyf, Encoding.UTF8);
+                foreach (var line in lines)
+                {
+                    var items = line.Trim().Split(' ');
+                    if (items.Length >= 2)
+                    {
+                        char ch = items[0][0];
+                        for (int i = 1; i < items.Length; i++)
+                        {
+                            string pyall = items[i];
+                            string pyori = pyall;
+                            if ("12345".Contains(pyori.Last()))
+                            {
+                                pyori = pyori.Substring(0, pyori.Length - 1);
+                            }
+                            if (!py.ContainsKey(ch)) py[ch] = new List<string>();
+                            py[ch].Add(pyall);
+                            //py[ch]
+                        }
+                    }
+                }
+                lines = File.ReadAllLines(path + cangtou5f, Encoding.UTF8);
+                foreach (var line in lines)
+                {
+                    var ttmp = line.Trim();
+                    if (ttmp.Length > 0)
+                    {
+                        char targetch = ttmp[0];
+                        if (!cangtou5.ContainsKey(targetch)) cangtou5[targetch] = new List<string>();
+                        cangtou5[targetch].Add(ttmp);
+                        if (py.ContainsKey(targetch))
+                        {
+                            foreach (var pyi in py[targetch])
+                            {
+                                if (!cangtou5py.ContainsKey(pyi)) cangtou5py[pyi] = new List<string>();
+                                cangtou5py[pyi].Add(ttmp);
+                                string pyiori = pyi.Substring(0, pyi.Length - 1);
+                                if (!cangtou5py.ContainsKey(pyiori)) cangtou5py[pyiori] = new List<string>();
+                                cangtou5py[pyiori].Add(ttmp);
+                            }
+                        }
+                        targetch = ttmp[ttmp.Length-1];
+                        if (!cangwei5.ContainsKey(targetch)) cangwei5[targetch] = new List<string>();
+                        cangwei5[targetch].Add(ttmp);
+                        if (py.ContainsKey(targetch))
+                        {
+                            foreach (var pyi in py[targetch])
+                            {
+                                if (!cangwei5py.ContainsKey(pyi)) cangwei5py[pyi] = new List<string>();
+                                cangwei5py[pyi].Add(ttmp);
+                                string pyiori = pyi.Substring(0, pyi.Length - 1);
+                                if (!cangwei5py.ContainsKey(pyiori)) cangwei5py[pyiori] = new List<string>();
+                                cangwei5py[pyiori].Add(ttmp);
+                            }
+                        }
+                    }
+                }
+                lines = File.ReadAllLines(path + cangtou7f, Encoding.UTF8);
+                foreach (var line in lines)
+                {
+                    var ttmp = line.Trim();
+                    if (ttmp.Length > 0)
+                    {
+                        char targetch = ttmp[0];
+                        if (!cangtou7.ContainsKey(targetch)) cangtou7[targetch] = new List<string>();
+                        cangtou7[targetch].Add(ttmp);
+                        if (py.ContainsKey(targetch))
+                        {
+                            foreach (var pyi in py[targetch])
+                            {
+                                if (!cangtou7py.ContainsKey(pyi)) cangtou7py[pyi] = new List<string>();
+                                cangtou7py[pyi].Add(ttmp);
+                                string pyiori = pyi.Substring(0, pyi.Length - 1);
+                                if (!cangtou7py.ContainsKey(pyiori)) cangtou7py[pyiori] = new List<string>();
+                                cangtou7py[pyiori].Add(ttmp);
+                            }
+                        }
+                        targetch = ttmp[ttmp.Length-1];
+                        if (!cangwei7.ContainsKey(targetch)) cangwei7[targetch] = new List<string>();
+                        cangwei7[targetch].Add(ttmp);
+                        if (py.ContainsKey(targetch))
+                        {
+                            foreach (var pyi in py[targetch])
+                            {
+                                if (!cangwei7py.ContainsKey(pyi)) cangwei7py[pyi] = new List<string>();
+                                cangwei7py[pyi].Add(ttmp);
+                                string pyiori = pyi.Substring(0, pyi.Length - 1);
+                                if (!cangwei7py.ContainsKey(pyiori)) cangwei7py[pyiori] = new List<string>();
+                                cangwei7py[pyiori].Add(ttmp);
+                            }
+                        }
+                    }
+                }
+
 
                 // default
                 defaultAnswers = FileIOActor.readLines(path + defaultAnswerName).ToList();
@@ -397,8 +580,32 @@ namespace Native.Csharp.App.Actors
             return "";
         }
 
+        /// <summary>
+        /// 龚诗 bot 特有的模拟
+        /// </summary>
+        /// <returns></returns>
+        public string getGong()
+        {
+            StringBuilder sb = new StringBuilder();
+            
+            int snum = rand.Next(1, 5);
+            for(int i = 0; i < snum; i++)
+            {
+                int wnum = rand.Next(1, 5);
+                int nowlen = 0;
+                for(int j = 0; j < wnum; j++)
+                {
+                    string s = chaosXwb[rand.Next(chaosXwb.Count)];
+                    sb.Append(s);
+                    nowlen += s.Length;
+                    if (nowlen > 15) break;
+                }
+                if (i < snum - 1) sb.Append("，");
+                else sb.Append("。？！"[rand.Next(3)]);
+            }
 
-
+            return sb.ToString();
+        }
         /// <summary>
         /// 混沌模式的组句，比其他模式稍复杂些。从2个库中按概率抽取内容，整体上接近小万邦的同时加入新词
         /// </summary>
@@ -510,6 +717,179 @@ namespace Native.Csharp.App.Actors
             return result;
         }
 
+        public string getSymbolDeal(string str)
+        {
+            string res = "";
+
+            try
+            {
+                foreach(var sb in symbollist)
+                {
+                    if (str.StartsWith(sb.Key))
+                    {
+                        str = str.Substring(sb.Key.Length);
+                        if (string.IsNullOrWhiteSpace(str)) return "";
+
+                        var temp = sb.Value[rand.Next(sb.Value.Count)];
+                        if (temp.StartsWith("【W】"))     // num and english char
+                        {
+                            // total 10 + 26 + 26 = 62
+                            temp = temp.Substring(3);
+                            int singnum = temp.Length / 62;
+                            foreach (var ch in str)
+                            {
+                                try
+                                {
+                                    int index = -1;
+                                    if (ch >= '0' && ch <= '9') index = ch - '0';// res += temp[(int)(ch - '0')];
+                                    else if (ch >= 'a' && ch <= 'z') index = 10 + ch - 'a'; 
+                                    else if (ch >= 'A' && ch <= 'Z') index = 36 + ch - 'A'; 
+                                    if(index< 0 || singnum <= 0)
+                                    {
+                                        res += ch;
+                                    }
+                                    else
+                                    {
+                                        res += temp.Substring(index * singnum, singnum);
+                                    }
+                                }
+                                catch
+                                {
+                                    res += ch;
+                                }
+                            }
+                        }
+                        else if (temp.StartsWith("【N】"))        // just num
+                        {
+                            temp = temp.Substring(3); 
+                            int maxnum = temp.Length - 1;
+                            int trywholenum = -1;
+                            int.TryParse(str, out trywholenum);
+                            if (trywholenum >= 0 && trywholenum <= maxnum)
+                            {
+                                // whole num single sym
+                                res = temp[trywholenum].ToString();
+                            }
+                            else
+                            {
+                                // each num single char
+                                foreach (var ch in str)
+                                {
+                                    try
+                                    {
+                                        int index = -1;
+                                        if (ch >= '0' && ch <= '9') index = ch - '0';
+                                        if (index < 0)
+                                        {
+                                            res += ch;
+                                        }
+                                        else
+                                        {
+                                            res += temp.Substring(index, 1);
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        res += ch;
+                                    }
+                                }
+                            }
+                        }
+                        else if (temp.StartsWith("【E】"))        // english char
+                        {
+                            // total 26 + 26 = 52
+                            temp = temp.Substring(3);
+                            int singnum = temp.Length / 52;
+                            if (sb.Key.Contains("空心字母")) singnum = 4;
+                            foreach (var ch in str)
+                            {
+                                try
+                                {
+                                    int index = -1;
+                                    if (ch >= 'a' && ch <= 'z') index = ch - 'a';
+                                    else if (ch >= 'A' && ch <= 'Z') index = 26 + ch - 'A';
+                                    if (index < 0 || singnum <= 0)
+                                    {
+                                        res += ch;
+                                    }
+                                    else
+                                    {
+                                        
+                                        res += temp.Substring(index * singnum, singnum);
+                                    }
+                                }
+                                catch
+                                {
+                                    res += ch;
+                                }
+                            }
+                        }
+                        else if (temp.Contains("阿"))          // single word repeat
+                        {
+                            foreach (var ch in str)
+                            {
+                                try
+                                {
+                                    res += temp.Replace('阿', ch);
+                                }
+                                catch
+                                {
+                                    res += ch;
+                                }
+                            }
+                        }
+                        else if (temp.Contains("【1】"))
+                        {
+                            if (temp.Contains("【2】"))
+                            {
+                                // double content
+                                res = temp.Replace("【1】", str.Substring(0, str.Length / 2)).Replace("【2】", str.Substring(str.Length / 2));
+
+                            }
+                            else
+                            {
+                                // single content
+                                res = temp.Replace("【1】", str);
+                            }
+                        }
+
+
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return res;
+        }
+
+        public string getSpam(string key)
+        {
+            string result = "";
+            try
+            {
+                foreach(var para in junks)
+                {
+                    if (para.Count > 0)
+                    {
+                        result += para[rand.Next(para.Count)]+"\r\n";
+                    }
+                }
+                result = result.Replace("【E】", DateTime.Now.Year.ToString());
+                result = result.Replace("【B】", new string[] { "朋友", "小伙伴", "网友" }[rand.Next(3)]);
+                result = result.Replace("【A】", key);
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+            }
+
+            return result;
+        }
+
         public string getQianze(string mine, string character, string action)
         {
             string result = "";
@@ -543,7 +923,251 @@ namespace Native.Csharp.App.Actors
             return result;
         }
 
+        public string getDui(string sin)
+        {
+            sin = sin.Trim();
+            string sout = "";
 
+            for (int i = 0; i < sin.Length; i++)
+            {
+                if (i + 1 < sin.Length && cf2.ContainsKey(sin.Substring(i, 2)))
+                {
+                    sout += cf2[sin.Substring(i, 2)][rand.Next(cf2[sin.Substring(i, 2)].Length)];
+                    i += 1;
+                }
+                else if (cf.ContainsKey(sin[i].ToString()))
+                {
+                    sout += cf[sin[i].ToString()][rand.Next(cf[sin[i].ToString()].Length)];
+                }
+                //else if("３")
+                else if ("123456789".Contains(sin[i]))
+                {
+                    sout = $"{sout}{10-int.Parse(sin[i].ToString())}";
+                }
+                else if ("abcdefghijklmnopqrstuvwxyz".Contains(sin[i]))
+                {
+                    sout += "abcdefghijklmnopqrstuvwxyz"[rand.Next(26)];
+                }
+                else if ("ABCDEFGHIJKLMNOPQRSTUVWXYZ".Contains(sin[i]))
+                {
+                    sout += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[rand.Next(26)];
+                }
+                else if ("あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ".Contains(sin[i]))
+                {
+                    sout += "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ"[rand.Next(71)];
+                }
+                else if ("アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ".Contains(sin[i]))
+                {
+                    sout += "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンガギグゲゴザジズゼゾダヂヅデドバビブベボパピプペポ"[rand.Next(71)];
+                }
+                else
+                {
+                    sout += sin[i];
+                }
+            }
+
+            return sout;
+        }
+
+
+        public string getZYJ(string sin)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("云杰说道：");
+            int maxlong = 170;
+            int snum = rand.Next(1, 7);
+            for (int i = 0; i < snum; i++)
+            {
+                string tmp = yjsd[rand.Next(yjsd.Count)];
+                sb.Append(tmp);
+                if (sb.Length > maxlong) break;
+            }
+
+            return sb.ToString().Trim();
+        }
+
+        public string getCangtou(string target)
+        {
+            string res = "";
+            if (target.Length <= 0) return "";
+            try
+            {
+                if (target.Length > 50)
+                {
+                    target = target.Substring(0, 50);
+                }
+                string ct5 = "";
+                string ct7 = "";
+                foreach (var ch in target)
+                {
+                    if (cangtou5.ContainsKey(ch))
+                    {
+                        ct5 += $"{cangtou5[ch][rand.Next(cangtou5[ch].Count)]}\r\n";
+                    }
+                    else if (py.ContainsKey(ch))
+                    {
+                        bool find = false;
+                        foreach (var p in py[ch])
+                        {
+                            if (cangtou5py.ContainsKey(p))
+                            {
+                                ct5 += $"{cangtou5py[p][rand.Next(cangtou5py[p].Count)]}\r\n";
+                                find = true;
+                                break;
+                            }
+                        }
+                        if (!find)
+                        {
+                            ct5 = "";
+                            //res += $"(5)not found:{ch}\r\n";
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        ct5 = "";
+                        //res += $"(5)not found:{ch}\r\n";
+                        break;
+                    }
+                }
+
+                foreach (var ch in target)
+                {
+                    if (cangtou7.ContainsKey(ch))
+                    {
+                        ct7 += $"{cangtou7[ch][rand.Next(cangtou7[ch].Count)]}\r\n";
+                    }
+                    else if (py.ContainsKey(ch))
+                    {
+                        bool find = false;
+                        foreach (var p in py[ch])
+                        {
+                            if (cangtou7py.ContainsKey(p))
+                            {
+                                ct7 += $"{cangtou7py[p][rand.Next(cangtou7py[p].Count)]}\r\n";
+                                find = true;
+                                break;
+                            }
+                        }
+                        if (!find)
+                        {
+                            ct7 = "";
+                           // res += $"(7)not found:{ch}\r\n";
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        ct7 = "";
+                        res += $"(7)not found:{ch}\r\n";
+                        break;
+                    }
+                }
+                if (ct7.Length > 0 && ct5.Length > 0) res = "\r\n" + (rand.Next(2) > 0 ? ct7 : ct5);
+                else if (ct7.Length > 0) res = "\r\n" + ct7;
+                else if (ct5.Length > 0) res = "\r\n" + ct5;
+                else
+                {
+                    // notfind
+                    res = "我做不到。我紫菜";
+                }
+            }catch(Exception ex)
+            {
+                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                res = "我做不到。我紫菜";
+            }
+            return res;
+        }
+        public string getCangwei(string target)
+        {
+            string res = "";
+            if (target.Length <= 0) return "";
+            try
+            {
+                if (target.Length > 50)
+                {
+                    target = target.Substring(0, 50);
+                }
+                string ct5 = "";
+                string ct7 = "";
+                foreach (var ch in target)
+                {
+                    if (cangwei5.ContainsKey(ch))
+                    {
+                        ct5 += $"{cangwei5[ch][rand.Next(cangwei5[ch].Count)]}\r\n";
+                    }
+                    else if (py.ContainsKey(ch))
+                    {
+                        bool find = false;
+                        foreach (var p in py[ch])
+                        {
+                            if (cangwei5py.ContainsKey(p))
+                            {
+                                ct5 += $"{cangwei5py[p][rand.Next(cangwei5py[p].Count)]}\r\n";
+                                find = true;
+                                break;
+                            }
+                        }
+                        if (!find)
+                        {
+                            ct5 = "";
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        ct5 = "";
+                        break;
+                    }
+                }
+
+                foreach (var ch in target)
+                {
+                    if (cangwei7.ContainsKey(ch))
+                    {
+                        ct7 += $"{cangwei7[ch][rand.Next(cangwei7[ch].Count)]}\r\n";
+                    }
+                    else if (py.ContainsKey(ch))
+                    {
+                        bool find = false;
+                        foreach (var p in py[ch])
+                        {
+                            if (cangwei7py.ContainsKey(p))
+                            {
+                                ct7 += $"{cangwei7py[p][rand.Next(cangwei7py[p].Count)]}\r\n";
+                                find = true;
+                                break;
+                            }
+                        }
+                        if (!find)
+                        {
+                            ct7 = "";
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        ct7 = "";
+                        break;
+                    }
+                }
+                if (ct7.Length > 0 && ct5.Length > 0) res = "\r\n" + (rand.Next(2) > 0 ? ct7 : ct5);
+                else if (ct7.Length > 0) res = "\r\n" + ct7;
+                else if (ct5.Length > 0) res = "\r\n" + ct5;
+                else
+                {
+                    // notfind
+                    res = "我做不到。我紫菜";
+                }
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                res = "我做不到。我紫菜";
+            }
+            return res;
+        }
         public string getPen(long group, long user)
         {
             try
@@ -635,9 +1259,28 @@ namespace Native.Csharp.App.Actors
         }
 
 
+        public string getAnswerGong(long user, string question)
+        {
+            string answer = "";
+            string msg = "";
+            if (rand.Next(0, 100) < 85)
+            {
+                msg = getChaosRandomSentence(question) + getMotionString();
+            }
+            else
+            {
+                if (msg.Length <= 0 || rand.Next(1, 100) < 40)
+                {
+                    msg = getSaoHua() + getMotionString();
+                }
+            }
+
+            return msg;
+        }
+
+
         /// <summary>
         /// 混沌模式的回复
-        /// 混沌模式依然保留知识图谱基本查询功能
         /// </summary>
         /// <param name="user"></param>
         /// <param name="question"></param>

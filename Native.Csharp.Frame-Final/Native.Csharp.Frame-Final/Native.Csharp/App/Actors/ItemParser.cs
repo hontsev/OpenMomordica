@@ -260,6 +260,17 @@ namespace Native.Csharp.App.Actors
             return sb.ToString();
         }
 
+        public static string removeSymbol(string ori)
+        {
+            StringBuilder sb = new StringBuilder();
+            string sym = "，。、；：【】？“”‘’《》！￥…—{}[]()+=-/*!@#$%^&_|,.?:;/\\'\" \t";
+            foreach(var c in ori)
+            {
+                if (!sym.Contains(c)) sb.Append(c);
+            }
+            return sb.ToString();
+        }
+
         public static string[] splitSentence(string str)
         {
             string[] splits = { " ", "\t", "\n", "\r", ",", ".", "?", " ", "!", ";", ":", "，", "。", "”", "“", "‘", "’", "：", "；", "？", "！", "、", "（", "）", "(", ")", "\"", "'", "—", "《", "》", "【", "】", "…" };

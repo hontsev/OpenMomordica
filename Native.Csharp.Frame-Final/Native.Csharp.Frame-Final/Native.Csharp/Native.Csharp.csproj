@@ -70,6 +70,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Numerics" />
@@ -104,6 +105,8 @@
     <Compile Include="App\Actors\FileIOActor.cs" />
     <Compile Include="App\Actors\ItemActor.cs" />
     <Compile Include="App\Actors\ItemParser.cs" />
+    <Compile Include="App\Actors\MinesweepActor.cs" />
+    <Compile Include="App\Actors\MMDKWorldActor.cs" />
     <Compile Include="App\Actors\ModeActor.cs" />
     <Compile Include="App\Actors\RacehorseActor.cs" />
     <Compile Include="App\Actors\TranslateActor.cs" />
