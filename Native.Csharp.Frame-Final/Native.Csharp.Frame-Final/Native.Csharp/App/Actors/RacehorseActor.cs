@@ -2,30 +2,58 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using static Native.Csharp.App.Event.MomordicaMain;
 
 namespace Native.Csharp.App.Actors
 {
-    class RHUserInfo
+    class RHUser
     {
-        public BTCUser user;
-        public long hrmoney;
-        public int wintime;
-        public int losetime;
+        public long userid;
+        //public BTCUser user;
+        public ulong hrmoney = 0;
+        public ulong wintime = 0;
+        public ulong losetime = 0;
 
-        public RHUserInfo(BTCUser _user, long _hrmoney, int _wintime, int _losetime)
+        public RHUser(long _userid = -1)
         {
-            user = _user;
-            hrmoney = _hrmoney;
-            wintime = _wintime;
-            losetime = _losetime;
+            userid = _userid;
+            //user = _user;
+            //hrmoney = _hrmoney;
+            //wintime = _wintime;
+            //losetime = _losetime;
+        }
+
+        public RHUser(string str)
+        {
+            parse(str);
+        }
+
+        public void parse(string line)
+        {
+            try
+            {
+                var items = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (items.Length >= 4)
+                {
+                    userid = long.Parse(items[0]);
+                    hrmoney = ulong.Parse(items[1]);
+                    wintime= ulong.Parse(items[2]);
+                    losetime = ulong.Parse(items[3]);
+                }
+            }
+            catch(Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            
         }
                
         public override string ToString()
         {
-            return $"{user.qq}\t{hrmoney}\t{wintime}\t{losetime}";
+            return $"{userid}\t{hrmoney}\t{wintime}\t{losetime}";
         }
 
         public double getWinPercent()
@@ -40,36 +68,63 @@ namespace Native.Csharp.App.Actors
             return (double)100 * losetime / (double)(wintime + losetime);
         }
 
-        public int getPlayTime()
+        public ulong getPlayTime()
         {
             return wintime + losetime;
         }
     }
 
-    class HorseInfo
+    class RHHorse
     {
-        public string emoji;
-        public string name;
-        public int minspeed;
-        public int maxspeed;
-        public int triggerType;
-        public int triggerParam;
-        public string triggerEmoji;
+        public string emoji = "";
+        public string name = "";
+        public int minspeed = 0;
+        public int maxspeed = 0;
+        public int triggerType = 0;
+        public int triggerParam = 0;
+        public string triggerEmoji = "";
 
-        public HorseInfo(string _emoji, string _name, int _minspeed, int _maxspeed, int _triggerType, int _triggerParam, string _triggerEmoji)
+        public RHHorse()
         {
-            name = _name;
-            emoji = _emoji;
-            minspeed = _minspeed;
-            maxspeed = _maxspeed;
-            triggerType = _triggerType;
-            triggerParam = _triggerParam;
-            triggerEmoji = _triggerEmoji;
+            //name = _name;
+            //emoji = _emoji;
+            //minspeed = _minspeed;
+            //maxspeed = _maxspeed;
+            //triggerType = _triggerType;
+            //triggerParam = _triggerParam;
+            //triggerEmoji = _triggerEmoji;
+        }
+
+        public RHHorse(string str)
+        {
+            parse(str);
+        }
+
+        public void parse(string line)
+        {
+            try
+            {
+                var items = line.Split(new char[] { '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (items.Length >= 7)
+                {
+                    emoji = items[0];
+                    name = items[1];
+                    minspeed = int.Parse(items[2]);
+                    maxspeed = int.Parse(items[3]);
+                    triggerType = int.Parse(items[4]);
+                    triggerParam = int.Parse(items[5]);
+                    triggerEmoji = items[6];
+                }
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
         }
 
         public override string ToString()
         {
-            return $"{emoji}\t{name}\t{minspeed}\t{maxspeed}\t{triggerType}\t{triggerParam}\t{triggerEmoji}";
+            return $"{name}\t{emoji}\t{minspeed}\t{maxspeed}\t{triggerType}\t{triggerParam}\t{triggerEmoji}";
         }
 
         public int getNextStep()
@@ -78,7 +133,7 @@ namespace Native.Csharp.App.Actors
         }
     }
 
-    class Buff
+    class RHBuff
     {
         public string emoji;
         public int type;
@@ -86,7 +141,7 @@ namespace Native.Csharp.App.Actors
         public int lefttime;
         public int speedAdd = 0;
         
-        public Buff(string _emoji, int _type, int _para, int _lefttime)
+        public RHBuff(string _emoji, int _type, int _para, int _lefttime)
         {
             emoji = _emoji;
             type = _type;
@@ -95,32 +150,38 @@ namespace Native.Csharp.App.Actors
         }
     }
 
-    class Road
+    class RHRoad
     {
-        public HorseInfo horse;
+        public RHHorse horse;
         public int num;
         public int nowlen;
-        public Buff buff;
+        public RHBuff buff;
 
-        public Road(int _num, HorseInfo _horse)
+        public RHRoad(int _num, RHHorse _horse)
         {
             num = _num;
             horse = _horse;
             nowlen = 0;
         }
     }
-    
-    class MatchInfo
+
+    enum RHStatus
     {
-        getQQNickHandler getQQNick;
-        public sendQQGroupMsgHandler showScene;
+        None, Bet, Run, End
+    }
+    
+    class RHMatch
+    {
+        RacehorseActor ra = null;
+       // getQQNickHandler getQQNick;
+      //  public sendQQGroupMsgHandler showScene;
 
-        public Dictionary<RHUserInfo, Dictionary<int, long>> bets = new Dictionary<RHUserInfo, Dictionary<int, long>>();
-        public Dictionary<int, Road> roads = new Dictionary<int, Road>();
+        public Dictionary<RHUser, Dictionary<int, long>> bets = new Dictionary<RHUser, Dictionary<int, long>>();
+        public Dictionary<int, RHRoad> roads = new Dictionary<int, RHRoad>();
 
-        public long id;  //用qq群号作为比赛唯一标识，避免同一个群同时多局
-        public int roadnum;
-        public int roadlen;
+        public long id = -1;  //用qq群号作为比赛唯一标识，避免同一个群同时多局
+        public int roadnum = 0;
+        public int roadlen = 0;
        // public int maxTurn;
         //public int turn;
         /// <summary>
@@ -130,86 +191,112 @@ namespace Native.Csharp.App.Actors
         /// 2 开赛中
         /// 3 比赛结束
         /// </summary>
-        public int status = 0;
+        public RHStatus status = RHStatus.None;
 
         public const int betWaitTime = 30;    // 单位是秒
-        public const int turnWaitTime = 5;
+        public const int turnWaitTime = 3;
         public const int GameoverTime = 1;
         public int nowTime = 0;
         public int winnerRoad = 0;
         string skillDescription = "";
 
-        public void begin(long _id, int _roadnum, int _roadlen, List<HorseInfo> _horses, sendQQGroupMsgHandler handle, getQQNickHandler getqq)
+        public RHMatch(long _id, RacehorseActor _ra)
+        {
+            id = _id;
+            ra = _ra;
+        }
+
+        public void begin(int _roadnum, int _roadlen)
         {
             //horses = _horses;
-            showScene = handle;
-            getQQNick = getqq;
-            id = _id;
+            //showScene = handle;
+            //getQQNick = getqq;
             roadnum = _roadnum;
             roadlen = _roadlen;
             roads.Clear();
             bets.Clear();
-            initHorses(_horses);
-            status = 1;
+            initHorses(ra.horses.Values.ToList());
+            status = RHStatus.Bet;
             nowTime = 0;
             skillDescription = "";
         }
 
-        public void initHorses(List<HorseInfo> _horses)
+        /// <summary>
+        /// 给赛道分配🐎
+        /// </summary>
+        /// <param name="_horses"></param>
+        public void initHorses(List<RHHorse> _horses)
         {
             //FileIOActor.log("init horses. horse type " + _horses.Count);
             if (roadnum > 0 && _horses.Count > 0)
             {
                 for(int i = 1; i <= roadnum; i++)
                 { 
-                    roads[i] = new Road(i, _horses[RacehorseActor.rand.Next(_horses.Count)]);
+                    roads[i] = new RHRoad(i, _horses[RacehorseActor.rand.Next(_horses.Count)]);
               //      FileIOActor.log("road " + i + " horse " + roads[i].horse.emoji);
                 }
             }
         }
 
-        public string bet(RHUserInfo _user, int _roadnum, long _money)
+        /// <summary>
+        /// 下注
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="roadnum"></param>
+        /// <param name="money"></param>
+        /// <returns></returns>
+        public string bet(RHUser user, int roadnum, long money)
         {
-            if (status != 1 || _money<=0) return "";
-            if (!bets.ContainsKey(_user))
+            try
             {
-                bets[_user] = new Dictionary<int, long>();
-            }
-            if(_roadnum<=0 || _roadnum > roadnum)
-            {
-                return $"在？没有第{_roadnum}条赛道";
-            }
-            if ( _user.user.money <= 0)
-            {
-                return $"一分钱都没有，下你🐎的注呢？";
-            }
-            if(bets[_user].Keys.Count>= 2 && !bets[_user].ContainsKey(_roadnum))
-            {
-                return $"最多押两匹，你已经下了{string.Join("、", bets[_user].Keys)}。";
-            }
-            string res = "";
-            if (_money >= _user.user.money)
-            {
-                res = $"all in!把手上的{_user.user.money}枚{BTCActor.unitName}都押了{_roadnum}号马";
-                _money = _user.user.money;
-                _user.user.money = 0;
-            }
-            else
-            {
-                _user.user.money -= _money;
-                res = $"成功在{_roadnum}号马下注{_money}枚{BTCActor.unitName}，账户余额{_user.user.money}";
+                int maxbet = 2;
+                if (status != RHStatus.Bet || money <= 0) return "";
 
+                var btcuser = ra.btc.getUser(user.userid);
+                if (user == null) return "";
+
+                if (roadnum <= 0 || roadnum > this.roadnum) return $"在？没有第{roadnum}条赛道";
+
+                if (btcuser.Money <= 0) return $"一分钱都没有，下你🐎的注呢？";
+
+                if (!bets.ContainsKey(user)) bets[user] = new Dictionary<int, long>();
+
+                if (bets[user].Keys.Count >= maxbet && !bets[user].ContainsKey(roadnum))
+                {
+                    return $"最多押{maxbet}匹，你已经押了{string.Join("、", bets[user].Keys)}。";
+                }
+                
+                string res = "";
+                if (money >= btcuser.Money)
+                {
+                    money = btcuser.Money;
+                    res = $"all in!把手上的{money}枚{BTCActor.unitName}都押了{roadnum}号马";
+                }
+                else
+                {
+                    res = $"成功在{roadnum}号马下注{money}枚{BTCActor.unitName}";
+                }
+
+                btcuser.addMoney(-1 * money);
+                user.hrmoney += (ulong)money;
+                if (!bets[user].ContainsKey(roadnum)) bets[user][roadnum] = 0;
+                bets[user][roadnum] += money;
+
+                res += $"，账户余额{btcuser.Money}";
+                return res;
             }
-            if (!bets[_user].ContainsKey(_roadnum))
+            catch(Exception ex)
             {
-                bets[_user][_roadnum] = 0;
+                FileIOActor.log(ex);
+                return $"ERROR:{ex.Message}";
             }
-            _user.hrmoney += _money;
-            bets[_user][_roadnum] += _money;
-            
-            return res;
+          
         }
 
+        /// <summary>
+        /// 当前赛场画面
+        /// </summary>
+        /// <returns></returns>
         public string getMatchScene()
         {
             StringBuilder sb = new StringBuilder();
@@ -232,6 +319,10 @@ namespace Native.Csharp.App.Actors
             return sb.ToString();
         }
 
+
+        /// <summary>
+        /// 计算当前帧的比赛进度
+        /// </summary>
         private void nextLoop()
         {
             winnerRoad = 0;
@@ -262,13 +353,13 @@ namespace Native.Csharp.App.Actors
                             case 1:
                                 // 自身加速
                                 skillDescription = $"{road.num}号马突然开始加速！";
-                                road.buff = new Buff(road.horse.triggerEmoji, road.horse.triggerType, road.horse.triggerParam, 1);
+                                road.buff = new RHBuff(road.horse.triggerEmoji, road.horse.triggerType, road.horse.triggerParam, 1);
                                 road.buff.speedAdd = road.horse.triggerParam;
                                 break;
                             case 2:
                                 // 第一减速
                                 skillDescription = $"{road.num}号马累了！";
-                                road.buff = new Buff(road.horse.triggerEmoji, road.horse.triggerType, road.horse.triggerParam, 1);
+                                road.buff = new RHBuff(road.horse.triggerEmoji, road.horse.triggerType, road.horse.triggerParam, 1);
                                 road.buff.speedAdd = road.horse.triggerParam;
                                 break;
                             default: break;
@@ -295,13 +386,18 @@ namespace Native.Csharp.App.Actors
             }
         }
 
+        /// <summary>
+        /// 结算
+        /// </summary>
+        /// <param name="winnerroad"></param>
+        /// <returns></returns>
         public string calBetResult(int winnerroad)
         {
             StringBuilder sb = new StringBuilder();
 
             long allmoney = 0;
             foreach (var bet in bets.Values) foreach (var money in bet.Values) allmoney += money;
-            List<RHUserInfo> winners = new List<RHUserInfo>();
+            List<RHUser> winners = new List<RHUser>();
             double pl = RacehorseActor.rand.Next(1000, 6666);
             long othermoneys = 0;
             long winnermoneys = 0;
@@ -335,78 +431,88 @@ namespace Native.Csharp.App.Actors
                 double bl = othermoneys / winnermoneys + 2;
                 foreach (var winner in winners)
                 {
-                    int money = (int)(Math.Ceiling(bets[winner][winnerroad] * bl)) + 1;
-                    winner.user.money += money;
-                    sb.Append($"{getQQNick(winner.user.qq)}赢了{money}枚{BTCActor.unitName}！恭喜\r\n");
+                    long money = (long)(Math.Ceiling(bets[winner][winnerroad] * bl)) + 1;
+                    var btcuser = ra.btc.getUser(winner.userid);
+                    long realMoney = btcuser.addMoney(money);
+                    if (realMoney == 0) sb.Append($"{ra.getQQNick(winner.userid)}赢了！恭喜！但可惜他钱包满了，没有新的入账\r\n");
+                    else sb.Append($"{ra.getQQNick(winner.userid)}赢了{realMoney}枚{BTCActor.unitName}！恭喜\r\n");
                     winner.wintime += 1;
                 }
             }
-                
-            
-
             return sb.ToString();
         }
 
+        /// <summary>
+        /// 进行下一帧
+        /// </summary>
         public void run()
         {
-            switch (status)
+            try
             {
-                case 0:
-                    //  未开始
-                    return;
-                case 1:
-                    // 下注中
-                    if (nowTime == 0)
-                    {
-                        // 输出马的介绍信息
-                        string s = "";
-                        s += $"现在是赛🐎比赛下注时间，请下注您看好的马（输入赛道对应数字）。比赛将于{betWaitTime}秒后自动开始\r\n";
-                        //showScene(id, -1, s);
-                        //s = "";
-                        foreach(var road in roads.Values)
+                switch (status)
+                {
+                    case RHStatus.None:
+                        //  未开始
+                        return;
+                    case RHStatus.Bet:
+                        // 下注中
+                        if (nowTime == 0)
                         {
-                            s += $"{road.num}号：{road.horse.emoji} {road.horse.name}\r\n";
+                            // 输出马的介绍信息
+                            string s = "";
+                            s += $"现在是赛🐎比赛下注时间，请下注您看好的马（输入赛道对应数字）。比赛将于{betWaitTime}秒后自动开始\r\n";
+                            //showScene(id, -1, s);
+                            //s = "";
+                            foreach (var road in roads.Values)
+                            {
+                                s += $"{road.num}号：{road.horse.emoji} {road.horse.name}\r\n";
+                            }
+                            ra.outputMessage(id, -1, s);
                         }
-                        showScene(id, -1, s);
-                    }
-                    else if(nowTime >= betWaitTime)
-                    {
-                        status = 2;
+                        else if (nowTime >= betWaitTime)
+                        {
+                            status = RHStatus.Run;
+                            nowTime = 0;
+                        }
+                        break;
+                    case RHStatus.Run:
+                        // 比赛中
+                        if (nowTime == 1)
+                        {
+                            // 输出比赛开始场景，初始化各赛道
+                            ra.outputMessage(id, -1, "赛🐎比赛正式开始！！");
+                            ra.outputMessage(id, -1, getMatchScene());
+                        }
+                        else if (nowTime >= turnWaitTime)
+                        {
+                            nextLoop();
+                            ra.outputMessage(id, -1, getMatchScene());
+                            if (winnerRoad > 0)
+                            {
+                                status = RHStatus.End;
+                                ra.outputMessage(id, -1, $"比赛结束！{winnerRoad}号马赢了！");
+                                ra.outputMessage(id, -1, calBetResult(winnerRoad));
+                                winnerRoad = -1;
+                            }
+                            nowTime = 1;
+                        }
+                        break;
+                    case RHStatus.End:
+                        // 比赛结束
+                        // 重置
+                        status = 0;
                         nowTime = 0;
-                    }
-                    break;
-                case 2:
-                    // 比赛中
-                    if (nowTime == 1)
-                    {
-                        // 输出比赛开始场景，初始化各赛道
-                        showScene(id, -1, "赛🐎比赛正式开始！！");
-                        showScene(id, -1, getMatchScene());
-                    }
-                    else if (nowTime >= turnWaitTime)
-                    {
-                        nextLoop();
-                        showScene(id, -1, getMatchScene());
-                        if (winnerRoad > 0)
-                        {
-                            status = 3;
-                            showScene(id, -1, $"比赛结束！{winnerRoad}号马赢了！");
-                            showScene(id, -1, calBetResult(winnerRoad));
-                            winnerRoad = -1;
-                        }
-                        nowTime = 1;
-                    }
-                    break;
-                case 3:
-                    // 比赛结束
-                    // 重置
-                    status = 0;
-                    nowTime = 0;
-                    break;
-                default:
-                    break;
+                        break;
+                    default:
+                        break;
+                }
+                nowTime += 1;
             }
-            nowTime += 1;
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+
         }
 
     }
@@ -426,43 +532,48 @@ namespace Native.Csharp.App.Actors
         public static bool run = false;
         public BTCActor btc;
 
-        public Dictionary<long, RHUserInfo> ruuserinfo = new Dictionary<long, RHUserInfo>();
-        public Dictionary<string, HorseInfo> horseinfo = new Dictionary<string, HorseInfo>();
-        public Dictionary<long , MatchInfo> matchinfo = new Dictionary<long, MatchInfo>();
+        public Dictionary<long, RHUser> users = new Dictionary<long, RHUser>();
+        public Dictionary<string, RHHorse> horses = new Dictionary<string, RHHorse>();
+        public Dictionary<long , RHMatch> matches = new Dictionary<long, RHMatch>();
 
         public TimeSpan raceBegin = new TimeSpan(21, 0, 0);
         public TimeSpan raceEnd = new TimeSpan(23, 0, 0);
 
-
+        int loopSpanMs = 1000;
         public RacehorseActor()
         {
+
         }
 
+        /// <summary>
+        /// 赛马主循环
+        /// </summary>
         public void raceLoop()
         {
-            int sleepTime = 1000;
-            while(run)
+            while (run)
             {
-                var matchs = matchinfo.Values.ToList();
-                for(int i = 0; i < matchs.Count; i++)
+                try
                 {
-                    var match = matchs[i];
-                    try
+                    var matchs = matches.Values.ToArray();
+                    for (int i = 0; i < matchs.Length; i++)
                     {
-                        match.run();
+                        var match = matchs[i];
+                        try
+                        {
+                            match.run();
+                        }
+                        catch (Exception ex)
+                        {
+                            FileIOActor.log(ex);
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
-                    }
+                    Thread.Sleep(loopSpanMs);
                 }
-                Thread.Sleep(sleepTime);
+                catch (Exception ex)
+                {
+                    FileIOActor.log(ex);
+                }
             }
-        }
-
-        public void show()
-        {
-            
         }
 
         public void init(sendQQGroupMsgHandler _showScene, getQQNickHandler _getQQNick, BTCActor _btc, string _path)
@@ -478,54 +589,25 @@ namespace Native.Csharp.App.Actors
                     var lines = FileIOActor.readLines(path + userinfoFile);
                     foreach (var line in lines)
                     {
-                        var items = line.Split('\t');
-                        if (items.Length >= 4)
-                        {
-                            BTCUser user = btc.get(items[0]);
-                            ruuserinfo[user.qq] = new RHUserInfo(
-                                user,
-                                int.Parse(items[1]),
-                                int.Parse(items[2]),
-                                int.Parse(items[3])
-                            );
-                        }
+                        RHUser user = new RHUser(line);
+                        users[user.userid] = user;
                     }
-
                     lines = FileIOActor.readLines(path + horseinfoFile);
                     foreach (var line in lines)
                     {
-                        var items = line.Split('\t');
-                        if (items.Length >= 7)
-                        {
-                            horseinfo[items[0]] = new HorseInfo(
-                                items[0],
-                                items[1],
-                                int.Parse(items[2]),
-                                int.Parse(items[3]),
-                                int.Parse(items[4]),
-                                int.Parse(items[5]),
-                                items[6]
-                            );
-                        }
+                        RHHorse horse = new RHHorse(line);
+                        horses[horse.name] = horse;
                     }
-                    try
-                    {
-                        run = true;
-                        if (raceLoopThread == null) raceLoopThread = new Thread(raceLoop);
-                        raceLoopThread.Start();
-                    }
-                    catch
-                    {
-
-                    }
-
+                    run = true;
+                    if (raceLoopThread == null) raceLoopThread = new Thread(raceLoop);
+                    raceLoopThread.Start();
                 }
                 catch (Exception e)
                 {
                     FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
                 }
             }
-               
+
         }
 
         public void save()
@@ -534,20 +616,17 @@ namespace Native.Csharp.App.Actors
             {
                 try
                 {
+                    StringBuilder sb = new StringBuilder();
                     FileIOActor.clearFile(path + userinfoFile);
-                    foreach (var user in ruuserinfo.Values)
+                    foreach (var user in users.Values)
                     {
-                        FileIOActor.appendLine(path + userinfoFile, user.ToString());
+                        sb.Append($"{user.ToString()}\r\n");
                     }
-                    //FileIOActor.clearFile(path + horseinfoFile);
-                    //foreach (var horse in horseinfo.Values)
-                    //{
-                    //    FileIOActor.appendLine(path + horseinfoFile, horse.ToString());
-                    //}
+                    FileIOActor.appendLine(path + userinfoFile, sb.ToString());
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                    FileIOActor.log(ex);
                 }
             }
         }
@@ -555,46 +634,41 @@ namespace Native.Csharp.App.Actors
 
         public void initMatch(long group, int num)
         {
-            if (!matchinfo.ContainsKey(group)) matchinfo[group] = new MatchInfo();
-            else if (matchinfo[group].status != 0) return;
-            matchinfo[group].begin(group, num, 100, horseinfo.Values.ToList(), outputMessage, getQQNick);
-            save();
+            if (!matches.ContainsKey(group)) matches[group] = new RHMatch(group, this);
+            if (matches[group].status == RHStatus.None)
+            {
+                // can restart
+                matches[group].begin(num, 100);
+            }
         }
 
-        public void addBet(long group, long userqq, int roadnum, int money)
-        {
-            if (!matchinfo.ContainsKey(group)) return;// matchinfo[group] = new MatchInfo();
-            if (!ruuserinfo.ContainsKey(userqq)) ruuserinfo[userqq] = new RHUserInfo(btc.get(userqq), 0, 0, 0);
-            string res = matchinfo[group].bet(ruuserinfo[userqq], roadnum, money);
-            if (!string.IsNullOrWhiteSpace(res)) outputMessage(group, userqq, res);
-            save();
-        }
-
-        #region 转换时间为unix时间戳
         /// <summary>
-        /// 转换时间为unix时间戳
+        /// 下注
         /// </summary>
-        /// <param name="date">需要传递UTC时间,避免时区误差,例:DataTime.UTCNow</param>
-        /// <returns></returns>
-        public static double toTimestamp(DateTime date)
+        /// <param name="matchid"></param>
+        /// <param name="user"></param>
+        /// <param name="road"></param>
+        /// <param name="money"></param>
+        public bool addBet(long matchid, RHUser user, int road, long money)
         {
-            DateTime dateTimeStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));
-            TimeSpan diff = date - dateTimeStart;
-            return Math.Floor(diff.TotalSeconds);
+            try
+            {
+                if (matches.ContainsKey(matchid))
+                {
+                    string res = matches[matchid].bet(user, road, money);
+                    if (!string.IsNullOrWhiteSpace(res))
+                    {
+                        outputMessage(matchid, user.userid, res);
+                        return true;
+                    }
+                }
+            }catch(Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return false;
         }
-        #endregion
 
-        #region 时间戳转换为时间
-
-        public static DateTime toDateTime(string timeStamp)
-        {
-            DateTime dateTimeStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));
-            long lTime = long.Parse(timeStamp + "0000000");
-            TimeSpan toNow = new TimeSpan(lTime);
-            return dateTimeStart.Add(toNow);
-        }
-
-        #endregion
 
 
         public bool isAllow(long group)
@@ -614,159 +688,214 @@ namespace Native.Csharp.App.Actors
 
 
 
-        public void showBigWinner(long group)
+        public string showBigWinner()
         {
-            var users = ruuserinfo.Values.ToList();
-            users.Sort((left, right) =>
+            try
             {
-                if (left.getWinPercent() < right.getWinPercent())
-                    return 1;
-                else if (left.getWinPercent() == right.getWinPercent())
+                StringBuilder sb = new StringBuilder();
+                var users = this.users.Values.ToList();
+                users.Sort((left, right) =>
                 {
-                    if (left.getPlayTime() < right.getPlayTime()) return 1;
-                    else if (left.getPlayTime() > right.getPlayTime()) return -1;
-                    else return 0;
-                }
-                else
-                    return -1;
-            });
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append("赛 🐎 胜 率 榜 \r\n");
-            int showtime = 0;
-            int index = 0;
-            while(showtime < 10 && index < users.Count)
-            {
-                int playtime = users[index].wintime + users[index].losetime;
-                if(playtime > 5)
+                    if (left.getWinPercent() < right.getWinPercent())
+                        return 1;
+                    else if (left.getWinPercent() == right.getWinPercent())
+                    {
+                        if (left.getPlayTime() < right.getPlayTime()) return 1;
+                        else if (left.getPlayTime() > right.getPlayTime()) return -1;
+                        else return 0;
+                    }
+                    else
+                        return -1;
+                });
+                sb.Append("赛 🐎 胜 率 榜 \r\n");
+                int showtime = 0;
+                int index = 0;
+                int maxnum = 10;
+                ulong mintime = 5;
+                while (showtime < maxnum && index < users.Count)
                 {
-                    sb.Append($"{showtime + 1}:{getQQNick(users[index].user.qq)},{Math.Round(users[index].getWinPercent(), 2)}%({users[index].wintime}/{playtime})\r\n");
-                    showtime += 1;
+                    ulong playtime = users[index].wintime + users[index].losetime;
+                    if (playtime > mintime)
+                    {
+                        sb.Append($"{showtime + 1}:{getQQNick(users[index].userid)},{Math.Round(users[index].getWinPercent(), 2)}%({users[index].wintime}/{playtime})\r\n");
+                        showtime += 1;
+                    }
+                    index += 1;
                 }
-                index += 1;
+                return sb.ToString();
+            }catch(Exception ex)
+            {
+                FileIOActor.log(ex);
             }
-            outputMessage(group, -1, sb.ToString());
+            return "";
             //save();
         }
 
-        public void showBigLoser(long group)
+        public string showBigLoser()
         {
-            var users = ruuserinfo.Values.ToList();
-            users.Sort((left, right) =>
+            try
             {
-                if (left.getLosePercent() < right.getLosePercent())
-                    return 1;
-                else if (left.getWinPercent() == right.getWinPercent())
+                var users = this.users.Values.ToList();
+                users.Sort((left, right) =>
                 {
-                    if (left.getPlayTime() < right.getPlayTime()) return 1;
-                    else if (left.getPlayTime() > right.getPlayTime()) return -1;
-                    else return 0;
-                }
-                else
-                    return -1;
-            });
+                    if (left.getLosePercent() < right.getLosePercent())
+                        return 1;
+                    else if (left.getWinPercent() == right.getWinPercent())
+                    {
+                        if (left.getPlayTime() < right.getPlayTime()) return 1;
+                        else if (left.getPlayTime() > right.getPlayTime()) return -1;
+                        else return 0;
+                    }
+                    else
+                        return -1;
+                });
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append("赛 🐎 败 率 榜 \r\n");
-            int showtime = 0;
-            int index = 0;
-            while (showtime < 10 && index < users.Count)
-            {
-                int playtime = users[index].wintime + users[index].losetime;
-                if (playtime > 5)
+                StringBuilder sb = new StringBuilder();
+                sb.Append("赛 🐎 败 率 榜 \r\n");
+                int showtime = 0;
+                int index = 0;
+                int maxnum = 10;
+                ulong mintime = 5;
+                while (showtime < maxnum && index < users.Count)
                 {
-                    sb.Append($"{showtime + 1}:{getQQNick(users[index].user.qq)},{Math.Round(users[index].getLosePercent(), 2)}%({users[index].losetime}/{playtime})\r\n");
-                    showtime += 1;
+                    ulong playtime = users[index].wintime + users[index].losetime;
+                    if (playtime > mintime)
+                    {
+                        sb.Append($"{showtime + 1}:{getQQNick(users[index].userid)},{Math.Round(users[index].getLosePercent(), 2)}%({users[index].losetime}/{playtime})\r\n");
+                        showtime += 1;
+                    }
+                    index += 1;
                 }
-                index += 1;
+
+                //for (int i = 0; i < Math.Min(users.Count, 10); i++)
+                //{
+                //    sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{Math.Round(users[i].getLosePercent(), 2)}%({users[i].losetime}/{users[i].wintime + users[i].losetime})\r\n");
+                //}
+                return sb.ToString();
             }
-
-            //for (int i = 0; i < Math.Min(users.Count, 10); i++)
-            //{
-            //    sb.Append($"{i + 1}:{getQQNick(users[i].qq)},{Math.Round(users[i].getLosePercent(), 2)}%({users[i].losetime}/{users[i].wintime + users[i].losetime})\r\n");
-            //}
-            outputMessage(group, -1, sb.ToString());
-            //save();
-        }
-
-        public void showRichest(long group)
-        {
-            var users = ruuserinfo.Values.ToList();
-            users.Sort((left, right) =>
+            catch (Exception ex)
             {
-                if (left.user.money < right.user.money)
-                    return 1;
-                else if (left.user.money == right.user.money)
-                    return 0;
-                else
-                    return -1;
-            });
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append("赛 🐎 富 豪 榜 \r\n");
-            for(int i = 0; i < Math.Min(users.Count,10); i++)
-            {
-                sb.Append($"{i + 1}:{getQQNick(users[i].user.qq)},{users[i].user.money}枚\r\n");
+                FileIOActor.log(ex);
             }
-            outputMessage(group, -1, sb.ToString());
-            //save();
+            return "";
+
         }
 
 
-        public void showPoorest(long group)
+        /// <summary>
+        /// 赌狗榜
+        /// </summary>
+        public string showMostPlayTime()
         {
-            var users = ruuserinfo.Values.ToList();
-            users.Sort((left, right) =>
+            try
             {
-                if (left.user.money > right.user.money)
-                    return 1;
-                else if (left.user.money == right.user.money)
-                    return 0;
-                else
-                    return -1;
-            });
+                StringBuilder sb = new StringBuilder();
+                sb.Append("赛 🐎 赌 狗 榜 \r\n");
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append("赛 🐎 穷 人 榜 \r\n");
-            for (int i = 0; i < Math.Min(users.Count, 10); i++)
-            {
-                sb.Append($"{i + 1}:{getQQNick(users[i].user.qq)},{users[i].user.money}枚\r\n");
+                int maxnum = 10;
+                var users = this.users.Values.ToList();
+                users.Sort((left, right) =>
+                {
+                    if (left.getPlayTime() < right.getPlayTime())
+                        return 1;
+                    else if (left.getPlayTime() == right.getPlayTime())
+                        return 0;
+                    else
+                        return -1;
+                });
+                for (int i = 0; i < Math.Min(users.Count, maxnum); i++)
+                {
+                    sb.Append($"{i + 1}:{getQQNick(users[i].userid)},赌了{users[i].wintime + users[i].losetime}次\r\n");
+                }
+                return sb.ToString();
             }
-            outputMessage(group, -1, sb.ToString());
-            //save();
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return "";
         }
 
-        public void showMostPlayTime(long group)
+        /// <summary>
+        /// 个人赌马记录
+        /// </summary>
+        /// <param name="userqq"></param>
+        /// <returns></returns>
+        public string getRHInfo(long userqq)
         {
-            var users = ruuserinfo.Values.ToList();
-            users.Sort((left, right) =>
-            {
-                if (left.getPlayTime()  < right.getPlayTime())
-                    return 1;
-                else if (left.getPlayTime() == right.getPlayTime())
-                    return 0;
-                else
-                    return -1;
-            });
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append("赛 🐎 赌 狗 榜 \r\n");
-            for (int i = 0; i < Math.Min(users.Count, 10); i++)
-            {
-                sb.Append($"{i + 1}:{getQQNick(users[i].user.qq)},赌了{users[i].wintime + users[i].losetime}次\r\n");
-            }
-            outputMessage(group, -1, sb.ToString());
-            //save();
-        }
-
-        
-        public string getRHInfo(long group, long userqq)
-        {
-            if (!ruuserinfo.ContainsKey(userqq)) ruuserinfo[userqq] = new RHUserInfo(btc.get(userqq), 0, 0, 0);
-            var u = ruuserinfo[userqq];
+            if (!users.ContainsKey(userqq)) users[userqq] = new RHUser(userqq);
+            var u = users[userqq];
             return $"您在赌马上消费过{u.hrmoney}枚{BTCActor.unitName}，共下注{u.losetime + u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%";
             //outputMessage(group, userqq, $"您在赌马上消费过{u.hrmoney}枚{BTCActor.unitName}，共下注{u.losetime+u.wintime}场，赢{u.wintime}场，胜率{Math.Round(u.getWinPercent(), 2)}%");
-            // save();
+        }
+
+        public string getIntroduction()
+        {
+            return $"赛🐎游戏介绍：\r\n" +
+                $"输入“赛马”开始一局比赛\r\n" +
+                $"在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n" +
+                $"比赛开始后自动演算，比赛期间不接收指令\r\n" +
+                $"其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”";
+        }
+
+        public bool dealCmd(long uid, long group, string cmd)
+        {
+            try
+            {
+                //if (!matches.ContainsKey(group)) matches[group] = new RHMatch(this, group);
+                if (!users.ContainsKey(uid)) users[uid] = new RHUser();
+                RHUser user = users[uid];
+
+                if (cmd == "赛马介绍" || cmd == "赛马玩法" || cmd == "赛马说明")
+                {
+                    outputMessage(group, -1, getIntroduction());
+                    return true;
+                }
+                else if (cmd == "赛马")
+                {
+                     int num = 5;
+                     initMatch(group, num);
+                     return true;
+                }
+                else if (cmd == "胜率榜")
+                {
+                    outputMessage(group, -1, showBigWinner());
+                    return true;
+                }
+                else if (cmd == "败率榜")
+                {
+                    outputMessage(group, -1, showBigLoser());
+                    return true;
+                }
+                else if (cmd== "赌狗榜")
+                {
+                    outputMessage(group, -1, showMostPlayTime());
+                    return true;
+                }
+                else
+                {
+                    var trygetbet = Regex.Match(cmd, @"(\d+)号\s*(\d+)");
+                    if (trygetbet.Success)
+                    {
+                        try
+                        {
+                            int roadnum = int.Parse(trygetbet.Groups[1].ToString());
+                            int money = int.Parse(trygetbet.Groups[2].ToString());
+                            addBet(group, user, roadnum, money);
+                            return true;
+                        }
+                        catch(Exception ex)
+                        {
+                            FileIOActor.log(ex);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return false;
         }
     }
 }

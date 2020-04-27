@@ -13,16 +13,31 @@ namespace Native.Csharp.App.Actors
     class FileIOActor
     {
         static string logFile = "log.txt";
+
+        /// <summary>
+        /// 将异常详情写入日志文件
+        /// </summary>
+        /// <param name="ex"></param>
+        public static void log(Exception ex)
+        {
+            try
+            {
+                log($"{ex.Message}\r\n{ex.StackTrace}");
+            }
+            catch { }
+        }
+
+        /// <summary>
+        /// 写入日志文件
+        /// </summary>
+        /// <param name="content"></param>
         public static void log(string content)
         {
             try
             {
                 File.AppendAllText(logFile, $"[{DateTime.Now.ToString("yyyyMMdd HH:mm:ss")}]{content}\r\n", Encoding.UTF8);
             }
-            catch
-            {
-
-            }
+            catch { }
         }
 
         /// <summary>
@@ -42,34 +57,56 @@ namespace Native.Csharp.App.Actors
                     }
                 }
             }
-            catch(Exception e)
+            catch(Exception ex)
             {
-                log(e.Message + "\r\n" + e.StackTrace);
-                return null;
+                log(ex);
             }
-
+            return "";
         }
 
         /// <summary>
-        /// 读取单个txt文件内容
+        /// 读取单个txt文件内容，默认utf-8编码
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
         public static string readTxtFile(string fileName)
         {
-            return readTxtFile(fileName, Encoding.UTF8);
+            try
+            {
+                return readTxtFile(fileName, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                log(ex);
+            }
+            return "";
         }
 
         /// <summary>
-        /// 读取txt文件列表
+        /// 读取txt文件中的行字符串，默认utf-8编码
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
         public static ICollection<string> readLines(string fileName)
         {
-            return readLines(fileName, Encoding.UTF8);
+            try
+            {
+                return readLines(fileName, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                log(ex);
+            }
+            return null;
         }
 
+
+        /// <summary>
+        /// 读取所有行
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
         public static ICollection<string> readLines(string fileName, Encoding encoding)
         {
             List<string> res = new List<string>();
@@ -91,34 +128,44 @@ namespace Native.Csharp.App.Actors
                     }
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                log(e.Message + "\r\n" + e.StackTrace);
+                log(ex);
             }
             return res;
         }
 
+        /// <summary>
+        /// 用utf-8编码覆盖写入
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="lines"></param>
         public static void writeLines(string fileName, ICollection<string> lines)
         {
             try
             {
-                File.WriteAllLines(fileName, lines);
+                File.WriteAllLines(fileName, lines, Encoding.UTF8);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                log(e.Message + "\r\n" + e.StackTrace);
+                log(ex);
             }
         }
 
+        /// <summary>
+        /// 用utf-8编码覆盖写入
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="data"></param>
         public static void write(string fileName, string data)
         {
             try
             {
-                File.WriteAllText(fileName, data);
+                File.WriteAllText(fileName, data, Encoding.UTF8);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                log(e.Message + "\r\n" + e.StackTrace);
+                log(ex);
             }
         }
 
@@ -126,11 +173,11 @@ namespace Native.Csharp.App.Actors
         {
             try
             {
-                File.WriteAllText(fileName, "");
+                write(fileName, "");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                log(e.Message + "\r\n" + e.StackTrace);
+                log(ex);
             }
         }
 
@@ -140,9 +187,9 @@ namespace Native.Csharp.App.Actors
             {
                 File.AppendAllText(fileName, line + "\r\n", Encoding.UTF8);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                log(e.Message + "\r\n" + e.StackTrace);
+                log(ex);
             }
         }
 

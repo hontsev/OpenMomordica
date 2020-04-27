@@ -56,7 +56,7 @@ namespace Native.Csharp.App.Actors
                 if (configs.ContainsKey("groupmsgbuff")) useGroupMsgBuf = int.Parse(configs["groupmsgbuff"]);
                 if (configs.ContainsKey("starttime"))
                 {
-                    startTime = DateTime.ParseExact(configs["starttime"], "yyyy-MM-dd hh:mm:ss", System.Globalization.CultureInfo.CurrentCulture);
+                    startTime = DateTime.ParseExact(configs["starttime"], "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.CurrentCulture);
                     startTimeString = configs["starttime"].Trim();
                 }
                 if (configs.ContainsKey("startnum")) beginTimes = long.Parse(configs["startnum"]) + 1;
@@ -67,9 +67,9 @@ namespace Native.Csharp.App.Actors
                 if (configs.ContainsKey("ignoreall")) ignoreall = long.Parse(configs["ignoreall"]) == 0 ? false : true;
                 if (configs.ContainsKey("testonly")) testonly = long.Parse(configs["testonly"]) == 0 ? false : true;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                FileIOActor.log(ex);
             }
 
             try
@@ -96,9 +96,9 @@ namespace Native.Csharp.App.Actors
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-
+                FileIOActor.log(ex);
             }
         }
 
@@ -133,16 +133,24 @@ namespace Native.Csharp.App.Actors
                 }
                 FileIOActor.write(path + personLevelListFile, sb.ToString());
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                FileIOActor.log(ex);
             }
         }
 
         public bool groupIs(long group, string state)
         {
-            if (groupLevel.ContainsKey(group)) return groupLevel[group].Contains(state);
-            else return false;
+            try
+            {
+                if (groupLevel.ContainsKey(group)) return groupLevel[group].Contains(state);
+                else return false;
+            }
+            catch(Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return false;
         }
 
         public bool groupIsNot(long group, string state)
@@ -154,42 +162,79 @@ namespace Native.Csharp.App.Actors
 
         public void groupAddTag(long group, string state)
         {
-            if (!groupLevel.ContainsKey(group)) groupLevel[group] = new List<string>();
-            if (!groupLevel[group].Contains(state.Trim()))
+            try
             {
-                groupLevel[group].Add(state.Trim());
-                save();
+                if (!groupLevel.ContainsKey(group)) groupLevel[group] = new List<string>();
+                if (!groupLevel[group].Contains(state.Trim()))
+                {
+                    groupLevel[group].Add(state.Trim());
+                    save();
+                }
             }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+
         }
 
         public void groupDeleteTag(long group, string state)
         {
-            if (!groupLevel.ContainsKey(group)) return;
-            groupLevel[group].Remove(state.Trim());
-            save();
+            try
+            {
+                if (!groupLevel.ContainsKey(group)) return;
+                groupLevel[group].Remove(state.Trim());
+                save();
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
         }
 
         public void personAddTag(long user, string state)
         {
-            if (!personLevel.ContainsKey(user)) personLevel[user] = new List<string>();
-            if (!personLevel[user].Contains(state.Trim()))
+            try
             {
-                personLevel[user].Add(state.Trim());
-                save();
+                if (!personLevel.ContainsKey(user)) personLevel[user] = new List<string>();
+                if (!personLevel[user].Contains(state.Trim()))
+                {
+                    personLevel[user].Add(state.Trim());
+                    save();
+                }
             }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+
         }
 
         public void personDeleteTag(long user, string state)
         {
-            if (!personLevel.ContainsKey(user)) return;
-            personLevel[user].Remove(state.Trim());
-            save();
+            try
+            {
+                if (!personLevel.ContainsKey(user)) return;
+                personLevel[user].Remove(state.Trim());
+                save();
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
         }
 
         public bool personIs(long user, string state)
         {
-            if (personLevel.ContainsKey(user)) return personLevel[user].Contains(state);
-            else return false;
+            try
+            {
+                if (personLevel.ContainsKey(user)) return personLevel[user].Contains(state);
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return false;
         }
 
         /// <summary>
@@ -200,57 +245,127 @@ namespace Native.Csharp.App.Actors
         /// <returns></returns>
         public bool allowuser(long user)
         {
-            if (!personIs(user, "屏蔽")) return true;
-            else
+            try
             {
-                if (personLevel.ContainsKey(user))
+                if (!personIs(user, "屏蔽")) return true;
+                else
                 {
-                    for(int i = 0; i < personLevel[user].Count; i++)
+                    if (personLevel.ContainsKey(user))
                     {
-                        if (personLevel[user][i].StartsWith("有限："))
+                        for (int i = 0; i < personLevel[user].Count; i++)
                         {
-                            try
+                            if (personLevel[user][i].StartsWith("有限："))
                             {
-                                var paras = personLevel[user][i].Substring(3).Trim().Split(' ');
-                                if (paras.Length >= 3)
+                                try
                                 {
-                                    long lefttime, fulltime, lastts;
-                                    long.TryParse(paras[0], out lefttime);
-                                    long.TryParse(paras[1], out fulltime);
-                                    long.TryParse(paras[2], out lastts);
-
-
-                                    if (lefttime <= 0)
+                                    var paras = personLevel[user][i].Substring(3).Trim().Split(' ');
+                                    if (paras.Length >= 3)
                                     {
-                                        // try time reset
-                                        DateTime lasttime = new DateTime(lastts);
-                                        if(DateTime.Now - lasttime > TimeSpan.FromMinutes(60))
+                                        long lefttime, fulltime, lastts;
+                                        long.TryParse(paras[0], out lefttime);
+                                        long.TryParse(paras[1], out fulltime);
+                                        long.TryParse(paras[2], out lastts);
+
+
+                                        if (lefttime <= 0)
                                         {
-                                            lastts = DateTime.Now.Ticks;
-                                            lefttime = fulltime;
+                                            // try time reset
+                                            DateTime lasttime = new DateTime(lastts);
+                                            if (DateTime.Now - lasttime > TimeSpan.FromMinutes(60))
+                                            {
+                                                lastts = DateTime.Now.Ticks;
+                                                lefttime = fulltime;
+                                            }
+                                        }
+
+                                        if (lefttime > 0)
+                                        {
+                                            lefttime -= 1;
+                                            personLevel[user][i] = $"有限：{lefttime} {fulltime} {lastts}";
+                                            return true;
                                         }
                                     }
 
-                                    if (lefttime > 0)
-                                    {
-                                        lefttime -= 1;
-                                        personLevel[user][i] = $"有限：{lefttime} {fulltime} {lastts}";
-                                        return true;
-                                    }
                                 }
-                                
+                                catch (Exception ex)
+                                {
+                                    FileIOActor.log(ex);
+                                }
+                                return false;
                             }
-                            catch
-                            {
-
-                            }
-                            return false;
                         }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+
             return false;
         }
+
+
+        //public static DateTime toDateTime(string timeStamp)
+        //{
+        //    try
+        //    {
+        //        DateTime dateTimeStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));
+        //        long lTime = long.Parse(timeStamp + "0000000");
+        //        TimeSpan toNow = new TimeSpan(lTime);
+        //        return dateTimeStart.Add(toNow);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        FileIOActor.log(ex);
+        //    }
+        //    return DateTime.Now;
+        //}
+
+        #region 转换时间为unix时间戳
+        /// <summary>
+        /// 转换时间为unix时间戳
+        /// </summary>
+        /// <param name="date">需要传递UTC时间,避免时区误差,例:DataTime.UTCNow</param>
+        /// <returns></returns>
+        public static double toTimestamp(DateTime date)
+        {
+            try
+            {
+                DateTime dateTimeStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));
+                TimeSpan diff = date - dateTimeStart;
+                return Math.Floor(diff.TotalSeconds);
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return 0;
+        }
+        #endregion
+
+        #region 时间戳转换为时间
+
+        public static DateTime toDateTime(string timeStamp)
+        {
+            try
+            {
+                DateTime dateTimeStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));
+                long lTime = long.Parse(timeStamp + "0000000");
+                TimeSpan toNow = new TimeSpan(lTime);
+                return dateTimeStart.Add(toNow);
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return DateTime.Now;
+        }
+
+        #endregion
+
+
+
     }
 
 }

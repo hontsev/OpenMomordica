@@ -437,7 +437,7 @@ namespace Native.Csharp.App.Event
             {
                 
 
-                if (mmdkw.cmd(group, msg))
+                if (mmdkw.videoCmd(group, msg))
                 {
                     return true;
                 }
@@ -467,7 +467,7 @@ namespace Native.Csharp.App.Event
                 }
                 if (msg == "存档" && config.personIs(user, "管理员"))
                 {
-                    btc.save();
+                    //btc.save();
                     racehorse.save();
                     config.save();
                     string rmsg = "好，已存档";
@@ -959,82 +959,61 @@ namespace Native.Csharp.App.Event
                     catch { }
                 }
 
-                // 赛马
-                if (!config.groupIs(group, "禁赛马"))
+                // 抽卡相关
+                try
                 {
-                    if (isGroup && (msg == "赛马介绍" || msg == "赛马玩法" || msg == "赛马说明"))
+                    if(mmdkw.dcardCmd(user, group, msg) == true)
                     {
-                        sendGroup(group, user, "赛🐎游戏介绍：\r\n输入“赛马”开始一局比赛\r\n在比赛开始时会有下注时间，输入x号y可以向x号马下注y元\r\n比赛开始后自动演算，期间不接收指令\r\n其他指令包括“签到”“个人信息”“富豪榜”“穷人榜”“胜率榜”“败率榜”“赌狗榜”");
+                        // deal success. return.
                         return true;
                     }
-                    if (isGroup && (msg == "赛马"))
+                }
+                catch { }
+
+                // 赛马
+                if (isGroup && !config.groupIs(group, "禁赛马"))
+                {
+                    if (msg == "赛马" && (!config.groupIs(group, "测试") && !racehorse.isAllow(group)))
                     {
-                        if (config.groupIs(group, "测试") || racehorse.isAllow(group))
-                        {
-                            int num = 5;
-                            racehorse.initMatch(group, num);
-                            return true;
-                        }
+                        // ignore horse cmd
                     }
-                    if (isGroup && (msg == "富豪榜" || msg == "富人榜"))
+                    else
                     {
-                        racehorse.showRichest(group);
-                        return true;
-                    }
-                    if (isGroup && msg == "胜率榜")
-                    {
-                        racehorse.showBigWinner(group);
-                        return true;
-                    }
-                    if (isGroup && msg == "穷人榜")
-                    {
-                        racehorse.showPoorest(group);
-                        return true;
-                    }
-                    if (isGroup && msg == "败率榜")
-                    {
-                        racehorse.showBigLoser(group);
-                        return true;
-                    }
-                    if (isGroup && msg == "赌狗榜")
-                    {
-                        racehorse.showMostPlayTime(group);
-                        return true;
+                        if (racehorse.dealCmd(user, group, msg)) return true;
                     }
                 }
                 //else
                 //{
                 //    sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
                 //}
-
-
-                if (isGroup && msg == "个人信息")
+                if (isGroup && (msg == "富豪榜" || msg == "富人榜"))
                 {
-                    string res = $"{btc.getUserInfo(user)}\r\n{racehorse.getRHInfo(group, user)}";
+                    string res = btc.showRichest(); 
+                    if (res.Length > 0)
+                    {
+                        sendGroup(group, user, res);
+                        return true;
+                    }
+                }
+                if (isGroup && msg == "穷人榜")
+                {
+                    string res = btc.showPoorest();
+                    if (res.Length > 0)
+                    {
+                        sendGroup(group, user, res);
+                        return true;
+                    }
+                }
+
+                if (msg == "个人信息")
+                {
+                    string res = $"{btc.getUserInfo(user)}\r\n{racehorse.getRHInfo(user)}\r\n{mmdkw.getUserInfo(user)}";
                     if (res.Length > 0)
                     {
                         if (isGroup) sendGroup(group, user, res);
                         else sendPrivate(user, res);
                         return true;
                     }
-                }
-                if (isGroup)
-                {
-                    var trygetbet = Regex.Match(msg, @"(\d+)号\s*(\d+)");
-                    if (trygetbet.Success)
-                    {
-                        try
-                        {
-                            int roadnum = int.Parse(trygetbet.Groups[1].ToString());
-                            int money = int.Parse(trygetbet.Groups[2].ToString());
-                            racehorse.addBet(group, user, roadnum, money);
-                            return true;
-                        }
-                        catch
-                        {
-                        }
-                    }
-
                 }
 
 
@@ -1368,6 +1347,7 @@ namespace Native.Csharp.App.Event
         bool askme(ref string question)
         {
             //Common.CqApi.AddLoger(Sdk.Cqp.Enum.LogerLevel.Info, "name", name);
+            question = question.Trim();
             if (question.StartsWith(config.askName))
             {
                 question = question.Substring(config.askName.Length).Trim();
@@ -1553,20 +1533,39 @@ namespace Native.Csharp.App.Event
             {
                 return;
             }
-            if (user > 0)
-            {
-                msg = Common.CqApi.CqCode_At(user) + msg;// Common.CqApi.GetMemberInfo(group, user).Nick + " " + msg;// Common.CqApi.CqCode_At(user) + msg;
 
-            }
-            if (mmdk.config.useGroupMsgBuf > 0)
+            int maxlen = 900;
+            int maxt = 5;
+            do
             {
-                msg = "\r\n" + msg;
-                for (int i = 0; i < mmdk.config.useGroupMsgBuf; i++)    // 33  54
+                maxt -= 1;
+                try
                 {
-                    msg = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + msg;
+                    string tmp = msg.Substring(0, Math.Min(msg.Length,maxlen));
+
+                    if (user > 0)
+                    {
+                        tmp = Common.CqApi.CqCode_At(user) + tmp;// Common.CqApi.GetMemberInfo(group, user).Nick + " " + msg;// Common.CqApi.CqCode_At(user) + msg;
+
+                    }
+                    if (mmdk.config.useGroupMsgBuf > 0)
+                    {
+                        tmp = "\r\n" + tmp;
+                        for (int i = 0; i < mmdk.config.useGroupMsgBuf; i++)    // 33  54
+                        {
+                            tmp = Common.CqApi.CqCode_Face(Sdk.Cqp.Enum.Face.拳头) + tmp;
+                        }
+                    }
+                    Common.CqApi.SendGroupMessage(group, tmp);
+
+                    msg = msg.Substring(Math.Min(msg.Length, maxlen));
                 }
-            }
-            Common.CqApi.SendGroupMessage(group, msg);
+                catch { }
+
+                if (maxt <= 0) break;
+            } while (msg.Length > 0);
+
+
         }
 
         public void ReceiveGroupMessage(object sender, CqGroupMessageEventArgs e)
