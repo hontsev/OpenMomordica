@@ -843,7 +843,7 @@ namespace Native.Csharp.App.Actors
             try
             {
                 //if (!matches.ContainsKey(group)) matches[group] = new RHMatch(this, group);
-                if (!users.ContainsKey(uid)) users[uid] = new RHUser();
+                if (!users.ContainsKey(uid)) users[uid] = new RHUser(uid);
                 RHUser user = users[uid];
 
                 if (cmd == "赛马介绍" || cmd == "赛马玩法" || cmd == "赛马说明")
