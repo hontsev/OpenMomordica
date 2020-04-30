@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,6 +13,33 @@ namespace Native.Csharp.App.Actors
         string path = "";
         string firstName = "firstname.txt";
         string lastName = "lastname.txt";
+
+        public static int rand(int max)
+        {
+            return rand(0, max);
+        }
+        public static int rand(int min, int max)
+        {
+            byte[] buffer = Guid.NewGuid().ToByteArray();//生成字节数组
+            int iRoot = BitConverter.ToInt32(buffer, 0);//利用BitConvert方法把字节数组转换为整数
+            Random rdmNum = new Random(iRoot);//以这个生成的整数为种子
+            return rdmNum.Next(min, max);
+        }
+
+        public static string MD5(string input)
+        {
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                byte[] encodedPassword = new UTF8Encoding().GetBytes(input);
+                byte[] hash = ((HashAlgorithm)CryptoConfig.CreateFromName("MD5")).ComputeHash(encodedPassword);
+                string encoded = BitConverter.ToString(hash).Replace("-", string.Empty).ToLower();
+                return encoded;
+            }
+            else
+            {
+                return "";
+            }
+        }
 
 
         public EsuActor()
@@ -30,6 +58,31 @@ namespace Native.Csharp.App.Actors
             //    var items = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             //    if (items.Length >= 2) baiduWordReplaceDict[items[0]] = items[1];
             //}
+        }
+
+        //public static string getID(string prov, int year, int month, int day, bool male)
+        //{
+        //    string res = "";
+
+        //}
+
+        //public static string getProvenceCode(string pname)
+        //{
+
+        //}
+
+        public static int getIDCheckNum(string id17)
+        {
+            string[] Wi = ("7,9,10,5,8,4,2,1,6,3,7,9,10,5,8,4,2").Split(',');
+            char[] Ai = id17.ToCharArray();
+            int sum = 0;
+            for (int i = 0; i < 17; i++)
+            {
+                sum += int.Parse(Wi[i]) * int.Parse(Ai[i].ToString());
+            }
+            int y = -1;
+            Math.DivRem(sum, 11, out y);
+            return y;
         }
 
         /// <summary>

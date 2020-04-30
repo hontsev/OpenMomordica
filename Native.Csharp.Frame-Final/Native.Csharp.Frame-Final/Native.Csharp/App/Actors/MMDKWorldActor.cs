@@ -73,7 +73,7 @@ namespace Native.Csharp.App.Actors
             return res;
         }
 
-        public string toString()
+        public override string ToString()
         {
             return $"{name}\t{desc.Replace("\r\n","\\r\\n")}\t{level}\t{quality}";
         }
@@ -126,7 +126,7 @@ namespace Native.Csharp.App.Actors
             }
         }
 
-        public string toString()
+        public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
 
@@ -135,7 +135,7 @@ namespace Native.Csharp.App.Actors
             {
                 sb.Append($"{items[i].name},{pers[i]};");
             }
-            sb.Append("\r\n");
+            //sb.Append("\r\n");
 
             return sb.ToString();
         }
@@ -251,7 +251,7 @@ namespace Native.Csharp.App.Actors
            
         }
 
-        public string toString()
+        public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
 
@@ -260,7 +260,7 @@ namespace Native.Csharp.App.Actors
             {
                 sb.Append($"{cards[i].name},{cards[i].level};");
             }
-            sb.Append($"\t{userGetCardNum}\t{userSpendMoney}\r\n");
+            sb.Append($"\t{userGetCardNum}\t{userSpendMoney}");
 
             return sb.ToString();
         }
@@ -442,9 +442,9 @@ namespace Native.Csharp.App.Actors
             }
         }
 
-        public string toString()
+        public override string ToString()
         {
-            return $"{group}\t{pool.name}\r\n";
+            return $"{group}\t{pool.name}";
         }
 
         #region draw cards
@@ -610,7 +610,6 @@ namespace Native.Csharp.App.Actors
         public Dictionary<string, MWItemPool> pools = new Dictionary<string, MWItemPool>();
         public Dictionary<long, MWUser> users = new Dictionary<long, MWUser>();
 
-        //Dictionary<string,>
         public void init(sendQQGroupMsgHandler _showScene, getQQNickHandler _getQQNick, BTCActor _btc, string _path)
         {
             outputMessage = _showScene;
@@ -640,11 +639,11 @@ namespace Native.Csharp.App.Actors
                     {
                         MWItem card = new MWItem();
                         card.parse(line);
-                        cards[card.name] = card;
+                        if(!string.IsNullOrWhiteSpace(card.name)) cards[card.name] = card;
                     }
                     catch (Exception ex)
                     {
-                        FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                        FileIOActor.log(ex);
                     }
                 }
 
@@ -656,11 +655,11 @@ namespace Native.Csharp.App.Actors
                     {
                         MWItemPool pool = new MWItemPool(cards);
                         pool.parse(line);
-                        pools[pool.name] = pool;
+                        if (!string.IsNullOrWhiteSpace(pool.name)) pools[pool.name] = pool;
                     }
                     catch(Exception ex)
                     {
-                        FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                        FileIOActor.log(ex);
                     }
                 }
 
@@ -672,11 +671,11 @@ namespace Native.Csharp.App.Actors
                     {
                         MWUser user = new MWUser(-1, cards);
                         user.parse(line);
-                        users[user.userid] = user;
+                        if (user.userid > 0) users[user.userid] = user;
                     }
                     catch (Exception ex)
                     {
-                        FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                        FileIOActor.log(ex);
                     }
                 }
 
@@ -688,11 +687,11 @@ namespace Native.Csharp.App.Actors
                     {
                         MWServer server = new MWServer(this);
                         server.parse(line);
-                        servers[server.group] = server;
+                        if (server.group>0) servers[server.group] = server;
                     }
                     catch (Exception ex)
                     {
-                        FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                        FileIOActor.log(ex);
                     }
                 }
             }
@@ -722,13 +721,13 @@ namespace Native.Csharp.App.Actors
             }
             catch(Exception ex)
             {
-                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                FileIOActor.log(ex);
             }
             return false;
         }
         #endregion
        
-        #region draw cards
+        #region cards
         public string getAllPool()
         {
             StringBuilder sb = new StringBuilder();
@@ -742,7 +741,15 @@ namespace Native.Csharp.App.Actors
             return sb.ToString();
         }
 
-        public void saveCards()
+        public string getNowPool(MWServer server)
+        {
+            return $"目前卡池是{server.pool.name} 【{server.pool.desc}】，每抽消耗{server.pool.cost}{BTCActor.unitName}";
+        }
+
+        /// <summary>
+        /// 保存抽卡结果
+        /// </summary>
+        public void savePlayData()
         {
             lock (dcardMutex)
             {
@@ -751,18 +758,52 @@ namespace Native.Csharp.App.Actors
                     StringBuilder sb = new StringBuilder();
                     foreach (var user in users.Values)
                     {
-                        sb.Append(user.toString());
+                        sb.Append(user.ToString()+"\r\n");
                     }
                     File.WriteAllText(path + dcardPath + userf, sb.ToString(), Encoding.UTF8);
 
                     sb = new StringBuilder();
                     foreach (var server in servers.Values)
                     {
-                        sb.Append(server.toString());
+                        sb.Append(server.ToString()+"\r\n");
                     }
                     File.WriteAllText(path + dcardPath + dcardserverf, sb.ToString(), Encoding.UTF8);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    FileIOActor.log(ex);
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// 保存（新增的）卡片信息
+        /// </summary>
+        public void saveCardsData()
+        {
+            lock (dcardMutex)
+            {
+                try
+                {
+                    StringBuilder sb = new StringBuilder();
+                    foreach (var pool in pools.Values)
+                    {
+                        sb.Append(pool.ToString()+"\r\n");
+                    }
+                    File.WriteAllText(path + dcardPath + poolf, sb.ToString(), Encoding.UTF8);
+
+                    sb = new StringBuilder();
+                    foreach (var card in cards.Values)
+                    {
+                        sb.Append(card.ToString()+"\r\n");
+                    }
+                    File.WriteAllText(path + dcardPath + cardf, sb.ToString(), Encoding.UTF8);
+                }
+                catch (Exception ex)
+                {
+                    FileIOActor.log(ex);
+                }
             }
 
         }
@@ -804,11 +845,11 @@ namespace Native.Csharp.App.Actors
                     res += $"获得{dmoney}{BTCActor.unitName}";
                 }
                 outputMessage(server.group, user.userid, res.Trim());
-                saveCards();
+                savePlayData();
             }
             catch (Exception ex)
             {
-                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                FileIOActor.log(ex);
                 return false;
             }
             return true;
@@ -854,11 +895,11 @@ namespace Native.Csharp.App.Actors
                     }
                 }
                 outputMessage(server.group, user.userid, res.Trim());
-                saveCards();
+                savePlayData();
             }
             catch (Exception ex)
             {
-                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                FileIOActor.log(ex);
                 return false;
             }
             return true;
@@ -901,11 +942,11 @@ namespace Native.Csharp.App.Actors
                     }
                     outputMessage(server.group, user.userid, res.Replace("【用户名】", getQQNick(user.userid)).Trim());
                 }
-                saveCards();
+                savePlayData();
             }
             catch(Exception ex)
             {
-                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                FileIOActor.log(ex);
                 return false;
             }
             return true;
@@ -921,8 +962,9 @@ namespace Native.Csharp.App.Actors
                         $"换池xxx：将本群卡池换成xxx\r\n" +
                         $"物品栏：查看已有卡牌\r\n" +
                         $"卖a张b：从物品栏里卖掉a张b类型卡牌，换成少量{BTCActor.unitName}\r\n" +
-                        $"卖所有b/卖全部b：从物品栏里卖掉所有b类型卡牌\r\n"+
-                        $"卖n星及以下：从物品栏里卖掉所有小于等于n星的卡牌"
+                        $"卖所有b/卖全部b：从物品栏里卖掉所有b类型卡牌\r\n" +
+                        $"卖n星及以下：从物品栏里卖掉所有小于等于n星的卡牌\r\n" +
+                        $"加卡 name 3 desc：向【自定义】卡池新增一张卡，名为name，星级为3，描述为desc。参数用空格分割"
             ;
         }
 
@@ -956,7 +998,7 @@ namespace Native.Csharp.App.Actors
             }
             catch(Exception ex)
             {
-                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                FileIOActor.log(ex);
                 return false;
 
             }
@@ -992,10 +1034,99 @@ namespace Native.Csharp.App.Actors
             }
             catch (Exception ex)
             {
-                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                FileIOActor.log(ex);
             }
 
             return res;
+        }
+
+        public MWItemPool addPool(string name, string desc, long money)
+        {
+            try
+            {
+                name = name.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
+                desc = desc.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
+
+                if (pools.ContainsKey(name))
+                {
+                    // exist.
+                    return null;
+                }
+                if (string.IsNullOrWhiteSpace(name)
+                    || name.Length > 30
+                    || string.IsNullOrWhiteSpace(desc)
+                    || desc.Length > 300
+                    || money <= 0)
+                {
+                    // illegal
+                    return null;
+                }
+                MWItemPool pool = new MWItemPool(cards);
+                pool.name = name;
+                pool.desc = desc;
+                pool.cost = money;
+
+                pools[pool.name] = pool;
+                return pool;
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return null;
+        }
+
+        public MWItem addCard(string name, ulong quality, string desc)
+        {
+            try
+            {
+                name = name.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
+                desc = desc.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
+
+                if (cards.ContainsKey(name))
+                {
+                    // exist.
+                    return null;
+                }
+                if (string.IsNullOrWhiteSpace(name)
+                    || name.Length > 30
+                    || string.IsNullOrWhiteSpace(desc) 
+                    || desc.Length > 300
+                    || quality<=0 
+                    || quality >= 7)
+                {
+                    // illegal
+                    return null;
+                }
+                MWItem card = new MWItem();
+                card.name = name;
+                card.quality = quality;
+                card.desc = desc;
+                card.level = 1;
+                cards[card.name] = card;
+                return card;
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return null;
+        }
+
+        public bool addCardIntoPool(MWItemPool pool,  MWItem card)
+        {
+            try
+            {
+                int per = 1;
+                if (card.quality > 0 && card.quality <= 7) per += (int)((7 - card.quality) * 5);
+                pool.addItem(card, per);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+            return false;
         }
 
         public bool dcardCmd(long uid, long group, string cmd)
@@ -1009,7 +1140,7 @@ namespace Native.Csharp.App.Actors
                 
                 if (cmd == "查看卡池" || cmd == "卡池" || cmd == "什么池" || cmd == "当前卡池")
                 {
-                    outputMessage(group, -1, $"目前卡池是{server.pool.name} 【{server.pool.desc}】，每抽消耗{server.pool.cost}{BTCActor.unitName}");
+                    outputMessage(group, -1, getNowPool(server));
                     return true;
                 }
                 else if (cmd == "卡池列表" )
@@ -1037,9 +1168,9 @@ namespace Native.Csharp.App.Actors
                         server.pool = pools[cmd];
                         outputMessage(group, -1, $"已换为{cmd}卡池。");
                     }
-                    outputMessage(group, -1, $"目前卡池是{server.pool.name}:{server.pool.desc}，每抽消耗{server.pool.cost}枚{BTCActor.unitName}");
+                    outputMessage(group, -1, getNowPool(server));
 
-                    saveCards();
+                    savePlayData();
                     return true;
                 }
                 if (cmd == "抽卡" || cmd == "单抽")
@@ -1082,8 +1213,9 @@ namespace Native.Csharp.App.Actors
                             string target = matchzzs.Groups[2].ToString();
                             return deleteCards(server, user, target, num);
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            FileIOActor.log(ex);
                             return false;
                         }
                     }
@@ -1105,16 +1237,63 @@ namespace Native.Csharp.App.Actors
                             uint star = uint.Parse(matchzzs.Groups[1].ToString());
                             return deleteCardsByQuality(server, user, star);
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            FileIOActor.log(ex);
                             return false;
                         }
+                    }
+                }
+                else if (cmd.StartsWith("加卡"))
+                {
+                    try
+                    {
+                        cmd = cmd.Substring(2);
+                        var items = cmd.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (items.Length >= 3)
+                        {
+                            long paymoney = 20;
+                            if(btc.getUser(uid).Money< paymoney)
+                            {
+                                outputMessage(group, uid, $"自定义卡片需要花费{paymoney}{BTCActor.unitName}，余额不足。");
+                            }
+                            else
+                            {
+                                addPool("自定义", "由用户自行上传的卡组。卡牌稀有度自动根据星级计算。", 15);
+                                string name = items[0];
+                                ulong quality = ulong.Parse(items[1]);
+                                string desc = "";
+                                for (int i = 2; i < items.Length; i++) desc += items[i];
+                                var newcard = addCard(name, quality, desc);
+                                if (newcard!=null)
+                                {
+                                    // success
+                                    if(pools.ContainsKey("自定义") && addCardIntoPool(pools["自定义"], newcard))
+                                    {
+                                        btc.getUser(uid).addMoney(-1 * paymoney);
+
+                                        outputMessage(group, uid, $"您成功向【自定义】卡池新增1张卡。花费{paymoney}{BTCActor.unitName}");
+                                        saveCardsData();
+                                    }
+                                }
+                                else
+                                {
+                                    outputMessage(group, uid, $"自定义卡片出了问题，可能是卡片重名。（失败不收费）");
+                                }
+                            }
+                            return true;
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        FileIOActor.log(ex);
+                        return false;
                     }
                 }
             }
             catch (Exception ex)
             {
-                FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                FileIOActor.log(ex);
             }
             return false;
 

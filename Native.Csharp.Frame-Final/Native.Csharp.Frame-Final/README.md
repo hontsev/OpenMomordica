@@ -12,7 +12,7 @@
 
 ## Native.SDK 开发环境
 
->1. Visual Studio 2012 或更高版本
+>1. Visual Studio 2015 或更高版本（需要支持C# 6.0语法糖）
 >2. Microsoft .Net Framework 4.0 **(XP系统支持的最后一个版本)**
 
 ## Native.SDK 环境部署

@@ -131,48 +131,15 @@ namespace Native.Csharp.App.Event
         /// <returns>是否已按照指令进行了处理</returns>
         bool dealCmd(long group, long user, string msg)
         {
-            //if (user == config.masterQQ)
-            //{
-            //    // super admin
-            //    if (msg.Contains("remove "))
-            //    {
-            //        string userstr = msg.Replace("remove ", "").Trim();
-            //        //Common.CqApi.AddLoger(Sdk.Cqp.Enum.LogerLevel.Info, "test", userstr);
-            //        long userqq = 0;
-            //        long.TryParse(userstr, out userqq);
-            //        if (userqq != 0 && !userBlacklist.Keys.Contains(userqq))
-            //        {
-            //            try
-            //            {
-            //                userBlacklist[userqq] = 0;
-            //                sendGroup(group, user, $"~好，我立即屏蔽{userqq}~");
-            //                File.AppendAllText(rootDict + "\\ignoreuser.txt", $"{userqq}\t{userBlacklist[userqq]}\r\n");
-
-            //            }
-            //            catch { }
-            //            return true;
-            //        }
-            //    }
-            //}
-
             bool isGroup = (group <= 0) ? false : true;
-            msg = msg.Trim();
-            try
-            {
-                while (msg.EndsWith("?")) msg = msg.Substring(0, msg.Length - 1);
-                while (msg.EndsWith("？")) msg = msg.Substring(0, msg.Length - 1);
-            }
-            catch { }
-
 
             if (config.groupIs(group, "沉默"))
             {
                 return true;
             }
 
-
             // 模式配置
-            if ((!config.testonly && config.groupIs(group, "闲聊")) || config.groupIs(group, "测试"))
+            if (config.groupIs(group, "测试") || (!config.testonly && config.groupIs(group, "闲聊")))
             {
                 if (msg.Contains("模式列表"))
                 {
@@ -369,7 +336,7 @@ namespace Native.Csharp.App.Event
                 }
                 catch(Exception ex)
                 {
-                    FileIOActor.log(ex.Message + "\r\n" + ex.StackTrace);
+                    FileIOActor.log(ex);
                 }
                 
             }
@@ -390,14 +357,14 @@ namespace Native.Csharp.App.Event
                         string imgname = msg.Substring(imgindex + 15, imgindex2 - imgindex - 15);
                         string imgtmp = getQQImage(imgname);
                         string othermsg = msg.Substring(0, imgindex) + msg.Substring(imgindex2 + 1);
-                        int w = 50;
+                        int w = 45;
                         int h = 20;
                         if (!string.IsNullOrWhiteSpace(imgtmp))
                         {
                             string imgres = "";
                             Bitmap img = new Bitmap(imgtmp);
-                            if ((double)h / w <= (double)img.Height / img.Width) h = (int)((double)w * img.Height / img.Width);
-                            else w = (int)((double)h * img.Width / img.Height);
+                            if ((double)h / w <= (double)img.Height / img.Width) w = (int)((double)h * img.Width / img.Height * 1.7);
+                            else h = (int)((double)w * img.Height / img.Width / 1.7);
                             if (!string.IsNullOrWhiteSpace(othermsg))
                             {
                                 //if (isGroup) sendGroup(group, -1, "---" + othermsg + "---");
@@ -408,8 +375,8 @@ namespace Native.Csharp.App.Event
                                     int.TryParse(items[1], out h);
                                 }
                             }
-                            if (w <= 0 || w > img.Width) w = Math.Min(50, img.Width);
-                            if (h <= 0 || h > img.Height) h = Math.Min(20, img.Height);
+                            if (w <= 0 || w > img.Width) w = Math.Min(w, img.Width);
+                            if (h <= 0 || h > img.Height) h = Math.Min(h, img.Height);
                             
                             imgres = $"原图{img.Width}*{img.Height}，字符画{w}*{h}";
                             if (isGroup) sendGroup(group, -1, imgres);
@@ -810,8 +777,7 @@ namespace Native.Csharp.App.Event
                     try
                     {
                         string key = msg.Substring(3).Trim();
-                        while (key.EndsWith("？")) key = key.Substring(0, key.Length - 1);
-                        while (key.EndsWith("?")) key = key.Substring(0, key.Length - 1);
+                        while (key.EndsWith("？") || key.EndsWith("?")) key = key.Substring(0, key.Length - 1);
                         string res = modes.getSpam(key);
                         if (res.Length > 0)
                         {
@@ -986,21 +952,25 @@ namespace Native.Csharp.App.Event
                 //{
                 //    sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
                 //}
-                if (isGroup && (msg == "富豪榜" || msg == "富人榜"))
+
+
+                if (msg == "富豪榜" || msg == "富人榜")
                 {
                     string res = btc.showRichest(); 
                     if (res.Length > 0)
                     {
-                        sendGroup(group, user, res);
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
                         return true;
                     }
                 }
-                if (isGroup && msg == "穷人榜")
+                if (msg == "穷人榜")
                 {
                     string res = btc.showPoorest();
                     if (res.Length > 0)
                     {
-                        sendGroup(group, user, res);
+                        if (isGroup) sendGroup(group, user, res);
+                        else sendPrivate(user, res);
                         return true;
                     }
                 }
@@ -1015,15 +985,7 @@ namespace Native.Csharp.App.Event
                         return true;
                     }
                 }
-
-
-
-
             }
-            
-
-
-           
 
             if (config.groupIs(group, "测试"))
             {
@@ -1209,10 +1171,10 @@ namespace Native.Csharp.App.Event
         public void dealGroupMsg(long group, long user, string question)
         {
             tryInit();
-            saveMsg(group, user, question.Trim());
-            if (!askme(ref question)) return;
+            question = ItemParser.replaceCoolQEmojis(question.Trim());
+            saveMsg(group, user, question);
+            if (user==config.myQQ || !askme(ref question)) return;
             if (!config.allowuser(user)) return;
-
             if (dealCmd(group, user, question))
             {
                 config.playTimeGroup += 1;
@@ -1234,7 +1196,7 @@ namespace Native.Csharp.App.Event
                 case "云杰":msg += modes.getZYJ(question);break;
                 default: msg += modes.getAnswerWithMode(user, question, modeName); break;
             }
-            msg = ItemParser.getHexie(msg);
+            msg = config.replaceSSTV(msg);
 
 
             if (string.IsNullOrWhiteSpace(msg)) return;
@@ -1250,10 +1212,12 @@ namespace Native.Csharp.App.Event
         public void dealPrivateMsg(long user, string question)
         {
             tryInit();
-            saveMsg(0, user, question.Trim());
+            question = ItemParser.replaceCoolQEmojis(question.Trim());
+            saveMsg(0, user, question);
             if (!config.allowuser(user)) return;
             if (user == config.masterQQ)
             {
+                // test
                 // Common.CqApi.SendPrivateMessage(user, "[CQ: rich, url = https://i.y.qq.com/v8/playsong.html?songid=201243685&amp;source=yqq#wechat_redirect,text=来自QQ音乐的分享 《Lightbreaker》]");
             }
             if (dealCmd(0, user, question))
@@ -1283,7 +1247,7 @@ namespace Native.Csharp.App.Event
                 }
             }
 
-            msg = ItemParser.getHexie(msg);
+            msg = config.replaceSSTV(msg);
             
 
             if (string.IsNullOrWhiteSpace(msg)) return;
@@ -1329,9 +1293,9 @@ namespace Native.Csharp.App.Event
                         File.AppendAllText(gfile, $"{time}\t{user}\t{msg}\r\n", Encoding.UTF8);
                     }
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                    FileIOActor.log(ex);
                 }
             }
         }
@@ -1347,40 +1311,33 @@ namespace Native.Csharp.App.Event
         bool askme(ref string question)
         {
             //Common.CqApi.AddLoger(Sdk.Cqp.Enum.LogerLevel.Info, "name", name);
-            question = question.Trim();
-            if (question.StartsWith(config.askName))
+            try
             {
-                question = question.Substring(config.askName.Length).Trim();
-                if (question.StartsWith("，") || question.StartsWith(","))
+                if (string.IsNullOrWhiteSpace(config.askName)) return true;
+                if (question.StartsWith(config.askName))
                 {
-                    question = question.Substring(1);
-                }
-                int maxnum = 100;
-                do
-                {
-                    int begin = question.IndexOf("[CQ:emoji");
-                    if (begin < 0) break;
-                    int end = question.IndexOf("]");
-                    if (end < 0) break;
                     try
                     {
-                        question = question.Substring(0, begin) + question.Substring(end + 1);
+                        question = question.Substring(config.askName.Length).TrimStart(',', '，', ' ', '');
                     }
-                    catch
+                    catch { }
+                    return true;
+                }
+                if (question.Contains(ItemParser.CqCode_At(config.myQQ)))
+                {
+                    try
                     {
-                        break;
+                        question = question.Replace(ItemParser.CqCode_At(config.myQQ), "");
                     }
-                } while (maxnum-- > 0);
-                return true;
+                    catch { }
+                    return true;
+                }
             }
-
-
-            if (question.Contains(ItemParser.CqCode_At(config.myQQ)))
+            catch (Exception ex)
             {
-                question = question.Replace(ItemParser.CqCode_At(config.myQQ), "");
-                return true;
+                FileIOActor.log(ex);
             }
-            question = question.Trim();
+
             return false;
         }
 
@@ -1534,7 +1491,7 @@ namespace Native.Csharp.App.Event
                 return;
             }
 
-            int maxlen = 900;
+            int maxlen = 1600;
             int maxt = 5;
             do
             {

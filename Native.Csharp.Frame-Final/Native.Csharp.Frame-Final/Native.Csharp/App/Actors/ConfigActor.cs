@@ -27,10 +27,12 @@ namespace Native.Csharp.App.Actors
         public string path;
 
         public static string configFile = "config.txt";
+        public static string configSSTVFile = "configsstv.jpg";
         public static string groupLevelListFile = "level_group.txt";
         public static string personLevelListFile = "level_person.txt";
         public Dictionary<long, List<string>> groupLevel;
         public Dictionary<long, List<string>> personLevel;
+        public List<string[]> sstvs;
 
         public Configs()
         {
@@ -86,8 +88,8 @@ namespace Native.Csharp.App.Actors
                 }
 
                 personLevel = new Dictionary<long, List<string>>();
-                var lines2 = FileIOActor.readLines($"{this.path}{personLevelListFile}");
-                foreach (var line in lines2)
+                lines = FileIOActor.readLines($"{this.path}{personLevelListFile}");
+                foreach (var line in lines)
                 {
                     var items = line.Trim().Split('\t');
                     if (items.Length >= 2)
@@ -95,6 +97,18 @@ namespace Native.Csharp.App.Actors
                         personLevel[long.Parse(items[0])] = items[1].Trim().Split(new char[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries).ToList();
                     }
                 }
+
+                sstvs = new List<string[]>();
+                lines = FileIOActor.readLines($"{this.path}{configSSTVFile}");
+                foreach (var line in lines)
+                {
+                    var items = line.Split('\t');
+                    if (items.Length >= 2)
+                    {
+                        sstvs.Add(new string[] { items[0], items[1] });
+                    }
+                }
+
             }
             catch (Exception ex)
             {
@@ -304,24 +318,6 @@ namespace Native.Csharp.App.Actors
 
             return false;
         }
-
-
-        //public static DateTime toDateTime(string timeStamp)
-        //{
-        //    try
-        //    {
-        //        DateTime dateTimeStart = TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1));
-        //        long lTime = long.Parse(timeStamp + "0000000");
-        //        TimeSpan toNow = new TimeSpan(lTime);
-        //        return dateTimeStart.Add(toNow);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        FileIOActor.log(ex);
-        //    }
-        //    return DateTime.Now;
-        //}
-
         #region 转换时间为unix时间戳
         /// <summary>
         /// 转换时间为unix时间戳
@@ -364,8 +360,23 @@ namespace Native.Csharp.App.Actors
 
         #endregion
 
-
-
+        /// <summary>
+        /// 去除敏感词
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public string replaceSSTV(string str)
+        {
+            try
+            {
+                foreach (var w in sstvs)
+                {
+                    str = str.Replace(w[0], w[1]);
+                }
+            }
+            catch { }
+            return str;
+        }
     }
 
 }
