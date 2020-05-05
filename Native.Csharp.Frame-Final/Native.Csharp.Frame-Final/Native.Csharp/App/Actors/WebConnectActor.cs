@@ -204,15 +204,22 @@ namespace Native.Csharp.App.Actors
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        public static string getData(string url, Encoding encoding = null)
+        public static string getData(string url, Encoding encoding = null, string cookie = "",  bool json = false)
         {
-
+           // ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;// SecurityProtocolType.Tls1.2; 
+            ServicePointManager.CheckCertificateRevocationList = true;
+            ServicePointManager.DefaultConnectionLimit = 100;
+            ServicePointManager.Expect100Continue = false;
+            ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(CheckValidationResult);
             HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
             httpWebRequest.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3";
             httpWebRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36";
-            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.ContentType = json ? "application/json" : "text/html";
             httpWebRequest.Method = "GET";
             httpWebRequest.Timeout = 20000;
+            httpWebRequest.Headers.Add("Cookie", cookie);
+            //httpWebRequest.KeepAlive = false;
+            httpWebRequest.ProtocolVersion = HttpVersion.Version11;
             try
             {
                 HttpWebResponse httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
@@ -223,8 +230,9 @@ namespace Native.Csharp.App.Actors
                 streamReader.Close();
                 return responseContent;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                FileIOActor.log($"url={url}\r\n{ex.Message}\r\n{ex.StackTrace}");
                 return "";
             }
 

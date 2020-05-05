@@ -34,6 +34,8 @@ namespace Native.Csharp.App.Actors
         public Dictionary<long, List<string>> personLevel;
         public List<string[]> sstvs;
 
+        public static bool systemExit = false;
+
         public Configs()
         {
 

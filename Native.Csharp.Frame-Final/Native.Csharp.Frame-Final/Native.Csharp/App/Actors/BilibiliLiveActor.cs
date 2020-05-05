@@ -209,8 +209,8 @@ namespace Native.Csharp.App.Actors
                 {
                     int begin = html.LastIndexOf("__NEPTUNE_IS_MY_WAIFU__") + 24;
                     int end = html.LastIndexOf("}") + 1;
-                    FileIOActor.log("begin "+begin);
-                    FileIOActor.log("end " + end);
+                    //FileIOActor.log("begin "+begin);
+                    //FileIOActor.log("end " + end);
                     if (begin < end)
                     {
                         string json = html.Substring(begin, end - begin);
@@ -224,12 +224,12 @@ namespace Native.Csharp.App.Actors
                             long beginTimelong = long.Parse(j["roomInitRes"]["data"]["live_time"].ToString());
                             if (beginTimelong > 1000000000)
                             {
-                                FileIOActor.log("beginTimelong " + beginTimelong);
+                                //FileIOActor.log("beginTimelong " + beginTimelong);
                                 
                                 DateTime beginTime = SecondsToDateTime(beginTimelong);
-                                FileIOActor.log("beginTime " + beginTime.ToString("yyyyMMdd HHmmss"));
+                                //FileIOActor.log("beginTime " + beginTime.ToString("yyyyMMdd HHmmss"));
                                 DateTime nowTime = DateTime.Now;
-                                FileIOActor.log("nowTime " + nowTime.ToString("yyyyMMdd HHmmss"));
+                               // FileIOActor.log("nowTime " + nowTime.ToString("yyyyMMdd HHmmss"));
                                 var timespend = nowTime - beginTime;                                
                                 if (timespend.Days > 0) timeSpendStr += $"{timespend.Days}天";
                                 if (timespend.Hours > 0) timeSpendStr += $"{timespend.Hours}小时";
@@ -238,9 +238,9 @@ namespace Native.Csharp.App.Actors
                             }
                             else
                             {
-                                timeSpendStr = "未知开始时间";
+                                timeSpendStr = "不知道多长时间";
                             }
-                            FileIOActor.log("begin ? "+ timeSpendStr);
+                            //FileIOActor.log("begin ? "+ timeSpendStr);
                             string areaName = j["baseInfoRes"]["data"]["area_name"].ToString();
                             int online = int.Parse(j["baseInfoRes"]["data"]["online"].ToString());
 
@@ -257,7 +257,7 @@ namespace Native.Csharp.App.Actors
                         }
                         catch (Exception e1)
                         {
-                            FileIOActor.log(e1.Message + "\r\n" + e1.StackTrace);
+                            FileIOActor.log(e1);
                         }
                     }
                 }

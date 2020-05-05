@@ -259,7 +259,7 @@ namespace Native.Csharp.App.Event
                         }
                     }
 
-                    if (cmd.StartsWith("拉黑"))
+                    if (cmd.StartsWith("拉黑") || cmd.StartsWith("屏蔽"))
                     {
                         // group tag change
                         cmd = cmd.Substring(2);
@@ -1121,7 +1121,7 @@ namespace Native.Csharp.App.Event
             }
 
             msg = baidu.getZhidaoAnswer(question);
-            if (modes.rand.Next(0, 100) > 85 || msg.Length <= 0)
+            if (msg.Length <= 0)
             {
                 try
                 {
@@ -1133,9 +1133,9 @@ namespace Native.Csharp.App.Event
                         //sendPrivate(masterQQ, question + "\r\n\r\n" + tiebaanswer);
                     }
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                    FileIOActor.log(ex);
                 }
             }
             if (msg.Length <= 0)

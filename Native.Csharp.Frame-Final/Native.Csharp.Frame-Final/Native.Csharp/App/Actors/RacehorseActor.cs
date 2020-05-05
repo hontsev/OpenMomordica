@@ -169,12 +169,12 @@ namespace Native.Csharp.App.Actors
     {
         None, Bet, Run, End
     }
-    
+
     class RHMatch
     {
         RacehorseActor ra = null;
-       // getQQNickHandler getQQNick;
-      //  public sendQQGroupMsgHandler showScene;
+        // getQQNickHandler getQQNick;
+        //  public sendQQGroupMsgHandler showScene;
 
         public Dictionary<RHUser, Dictionary<int, long>> bets = new Dictionary<RHUser, Dictionary<int, long>>();
         public Dictionary<int, RHRoad> roads = new Dictionary<int, RHRoad>();
@@ -182,7 +182,7 @@ namespace Native.Csharp.App.Actors
         public long id = -1;  //用qq群号作为比赛唯一标识，避免同一个群同时多局
         public int roadnum = 0;
         public int roadlen = 0;
-       // public int maxTurn;
+        // public int maxTurn;
         //public int turn;
         /// <summary>
         /// 比赛状态
@@ -200,6 +200,10 @@ namespace Native.Csharp.App.Actors
         public int winnerRoad = 0;
         string skillDescription = "";
 
+        public static Thread raceLoopThread;
+        public static bool run = false;
+        public static int loopSpanMs = 1000;
+
         public RHMatch(long _id, RacehorseActor _ra)
         {
             id = _id;
@@ -208,17 +212,30 @@ namespace Native.Csharp.App.Actors
 
         public void begin(int _roadnum, int _roadlen)
         {
-            //horses = _horses;
-            //showScene = handle;
-            //getQQNick = getqq;
-            roadnum = _roadnum;
-            roadlen = _roadlen;
-            roads.Clear();
-            bets.Clear();
-            initHorses(ra.horses.Values.ToList());
-            status = RHStatus.Bet;
-            nowTime = 0;
-            skillDescription = "";
+            try
+            {
+                if (status != RHStatus.None) return;
+                //horses = _horses;
+                //showScene = handle;
+                //getQQNick = getqq;
+                roadnum = _roadnum;
+                roadlen = _roadlen;
+                roads.Clear();
+                bets.Clear();
+                initHorses(ra.horses.Values.ToList());
+                status = RHStatus.Bet;
+                nowTime = 0;
+                skillDescription = "";
+
+
+                raceLoopThread = new Thread(raceLoop);
+                run = true;
+                raceLoopThread.Start();
+            }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
         }
 
         /// <summary>
@@ -230,10 +247,10 @@ namespace Native.Csharp.App.Actors
             //FileIOActor.log("init horses. horse type " + _horses.Count);
             if (roadnum > 0 && _horses.Count > 0)
             {
-                for(int i = 1; i <= roadnum; i++)
-                { 
+                for (int i = 1; i <= roadnum; i++)
+                {
                     roads[i] = new RHRoad(i, _horses[RacehorseActor.rand.Next(_horses.Count)]);
-              //      FileIOActor.log("road " + i + " horse " + roads[i].horse.emoji);
+                    //      FileIOActor.log("road " + i + " horse " + roads[i].horse.emoji);
                 }
             }
         }
@@ -265,7 +282,7 @@ namespace Native.Csharp.App.Actors
                 {
                     return $"最多押{maxbet}匹，你已经押了{string.Join("、", bets[user].Keys)}。";
                 }
-                
+
                 string res = "";
                 if (money >= btcuser.Money)
                 {
@@ -285,12 +302,12 @@ namespace Native.Csharp.App.Actors
                 res += $"，账户余额{btcuser.Money}";
                 return res;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 FileIOActor.log(ex);
                 return $"ERROR:{ex.Message}";
             }
-          
+
         }
 
         /// <summary>
@@ -303,10 +320,10 @@ namespace Native.Csharp.App.Actors
 
             sb.Append("🏁\r\n");
             int len = 40;
-            for(int i = 1; i <= roadnum; i++)
+            for (int i = 1; i <= roadnum; i++)
             {
                 sb.Append(i);
-                if (i!= winnerRoad)  sb.Append("|");
+                if (i != winnerRoad) sb.Append("|");
                 int space = (int)(len * (1 - (double)roads[i].nowlen / roadlen));
                 if (space > 0) sb.Append(' ', space);
                 sb.Append(roads[i].horse.emoji);
@@ -329,11 +346,11 @@ namespace Native.Csharp.App.Actors
             int winnerlen = -1;
 
             // clear old buffs
-            foreach(var road in roads)
+            foreach (var road in roads)
             {
                 if (road.Value.buff == null) continue;
                 road.Value.buff.lefttime -= 1;
-                if(road.Value.buff.lefttime <= 0)
+                if (road.Value.buff.lefttime <= 0)
                 {
                     road.Value.buff = null;
                 }
@@ -366,7 +383,7 @@ namespace Native.Csharp.App.Actors
                         }
                     }
                 }
-               
+
 
             }
 
@@ -404,9 +421,9 @@ namespace Native.Csharp.App.Actors
             foreach (var bet in bets)
             {
                 bool win = false;
-                foreach(var betpair in bet.Value)
+                foreach (var betpair in bet.Value)
                 {
-                    if(betpair.Key == winnerroad)
+                    if (betpair.Key == winnerroad)
                     {
                         winnermoneys += betpair.Value;
                         winners.Add(bet.Key);
@@ -445,7 +462,7 @@ namespace Native.Csharp.App.Actors
         /// <summary>
         /// 进行下一帧
         /// </summary>
-        public void run()
+        public void runNextFrame()
         {
             try
             {
@@ -502,6 +519,7 @@ namespace Native.Csharp.App.Actors
                         // 重置
                         status = 0;
                         nowTime = 0;
+                        run = false;
                         break;
                     default:
                         break;
@@ -513,6 +531,29 @@ namespace Native.Csharp.App.Actors
                 FileIOActor.log(ex);
             }
 
+        }
+
+
+        /// <summary>
+        /// 赛马主循环
+        /// </summary>
+        public void raceLoop()
+        {
+            while (run && !Configs.systemExit)
+            {
+                Thread.Sleep(loopSpanMs);
+                try
+                {
+                    if (!run || Configs.systemExit) break;
+                    runNextFrame();
+                    if (!run || Configs.systemExit) break;
+                }
+                catch (Exception ex)
+                {
+                    FileIOActor.log(ex);
+                }
+                
+            }
         }
 
     }
@@ -528,8 +569,7 @@ namespace Native.Csharp.App.Actors
         string path = "";
         public static Random rand = new Random();
         object matchMutex = new object();
-        public static Thread raceLoopThread;
-        public static bool run = false;
+        
         public BTCActor btc;
 
         public Dictionary<long, RHUser> users = new Dictionary<long, RHUser>();
@@ -539,42 +579,13 @@ namespace Native.Csharp.App.Actors
         public TimeSpan raceBegin = new TimeSpan(21, 0, 0);
         public TimeSpan raceEnd = new TimeSpan(23, 0, 0);
 
-        int loopSpanMs = 1000;
+        
         public RacehorseActor()
         {
 
         }
 
-        /// <summary>
-        /// 赛马主循环
-        /// </summary>
-        public void raceLoop()
-        {
-            while (run)
-            {
-                try
-                {
-                    var matchs = matches.Values.ToArray();
-                    for (int i = 0; i < matchs.Length; i++)
-                    {
-                        var match = matchs[i];
-                        try
-                        {
-                            match.run();
-                        }
-                        catch (Exception ex)
-                        {
-                            FileIOActor.log(ex);
-                        }
-                    }
-                    Thread.Sleep(loopSpanMs);
-                }
-                catch (Exception ex)
-                {
-                    FileIOActor.log(ex);
-                }
-            }
-        }
+        
 
         public void init(sendQQGroupMsgHandler _showScene, getQQNickHandler _getQQNick, BTCActor _btc, string _path)
         {
@@ -598,9 +609,7 @@ namespace Native.Csharp.App.Actors
                         RHHorse horse = new RHHorse(line);
                         horses[horse.name] = horse;
                     }
-                    run = true;
-                    if (raceLoopThread == null) raceLoopThread = new Thread(raceLoop);
-                    raceLoopThread.Start();
+
                 }
                 catch (Exception e)
                 {
@@ -632,15 +641,7 @@ namespace Native.Csharp.App.Actors
         }
 
 
-        public void initMatch(long group, int num)
-        {
-            if (!matches.ContainsKey(group)) matches[group] = new RHMatch(group, this);
-            if (matches[group].status == RHStatus.None)
-            {
-                // can restart
-                matches[group].begin(num, 100);
-            }
-        }
+        
 
         /// <summary>
         /// 下注
@@ -854,7 +855,8 @@ namespace Native.Csharp.App.Actors
                 else if (cmd == "赛马")
                 {
                      int num = 5;
-                     initMatch(group, num);
+                     if (!matches.ContainsKey(group)) matches[group] = new RHMatch(group, this);
+                     matches[group].begin(num, 100);
                      return true;
                 }
                 else if (cmd == "胜率榜")

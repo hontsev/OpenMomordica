@@ -18,7 +18,9 @@ namespace Native.Csharp.App.Actors
     {
         string path = "";
         string imageWords = "imagewords.txt";
+        string cookief = "cookie.txt";
         string answerPath = "answer\\";
+        string cookie = "";
         Random rand = new Random();
         ItemParser parser = new ItemParser();
         Dictionary<string, string> baiduWordReplaceDict = new Dictionary<string, string>();
@@ -26,18 +28,27 @@ namespace Native.Csharp.App.Actors
         {
         }
 
-        public void init(string path)
+        public void init(string _path)
         {
-            this.path = path;
-            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
-            parser.init(path);
-
-            var lines = FileIOActor.readLines(path + imageWords);
-            foreach (var line in lines)
+            try
             {
-                var items = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                if (items.Length >= 2) baiduWordReplaceDict[items[0]] = items[1];
+                path = _path;
+                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+                parser.init(path);
+
+                var lines = FileIOActor.readLines(path + imageWords);
+                foreach (var line in lines)
+                {
+                    var items = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (items.Length >= 2) baiduWordReplaceDict[items[0]] = items[1];
+                }
+
+                cookie = File.ReadAllText(path + cookief, Encoding.UTF8);
+            }catch(Exception ex)
+            {
+                FileIOActor.log(ex);
             }
+
         }
 
         /// <summary>
@@ -86,7 +97,7 @@ namespace Native.Csharp.App.Actors
             var res = getBaiduKGResult(str);
             if (res.Length > 0)
             {
-                return res[0].Trim();
+                return ItemParser.removeBlank(res[0]);
             }
             else
             {
@@ -107,7 +118,7 @@ namespace Native.Csharp.App.Actors
             var res1 = getBaiduZhidaoAnswers(str, 5);
             if (res1.Length > 0)
             {
-                int maxlen = 100;
+                int maxlen = 1000;
                 int findwidth = 30;
                 var tmp = res1[rand.Next(0, res1.Length)].Replace("展开全部", "").Replace("\r", "").Trim();
                 tmp = ItemParser.StripHTML(tmp);
@@ -205,7 +216,7 @@ namespace Native.Csharp.App.Actors
         {
             List<string> reslist = new List<string>();
             string askUrl = "https://www.baidu.com/s?ie=utf-8&wd=" + WebConnectActor.UrlEncode(words);
-            string html = WebConnectActor.getData(askUrl, Encoding.UTF8);
+            string html = WebConnectActor.getData(askUrl,  Encoding.UTF8, cookie);
             //var html1 = HttpUtility.UrlDecode(html);
             //var html2 = Regex.Unescape(html);
             //FileIOActor.log(askUrl);
@@ -448,20 +459,22 @@ namespace Native.Csharp.App.Actors
         /// <returns></returns>
         public string[] getBaiduZhidaoAnswers(string sentence, int num = 10)
         {
-            string url = string.Format("http://zhidao.baidu.com/search?word={0}", WebConnectActor.UrlEncode(sentence));
-
             List<string> res = new List<string>();
-            string html = WebConnectActor.getData(url, Encoding.GetEncoding("gb2312"));
-            HtmlDocument hdoc = new HtmlDocument();
-            hdoc.LoadHtml(html);
-
             try
             {
+                string url = $"https://zhidao.baidu.com/search?word={WebConnectActor.UrlEncode(sentence)}";
+                string html = WebConnectActor.getData(url, Encoding.GetEncoding("gb2312"), cookie);
+                //FileIOActor.log(url);
+                //FileIOActor.log(html);
+
+                HtmlDocument hdoc = new HtmlDocument();
+                hdoc.LoadHtml(html);
                 HtmlNode favurl = null;
                 try
                 {
                     favurl = hdoc.DocumentNode.SelectSingleNode("//dt[@class=\"dt mb-8\"]").ChildNodes[1];
-                } catch  { }
+                }
+                catch (Exception ex) { FileIOActor.log(ex); }
 
                 var urls = hdoc.DocumentNode.SelectNodes("//a[@class=\"ti\"]");
                 if (favurl != null)
@@ -477,8 +490,9 @@ namespace Native.Csharp.App.Actors
                     if (res.Count > num) break;
 
                 }
+                
             }
-            catch { }
+            catch (Exception ex) { FileIOActor.log(ex); }
 
             return res.ToArray();
         }
@@ -504,7 +518,7 @@ namespace Native.Csharp.App.Actors
             List<string> res = new List<string>();
 
             // 弱智百度的编码是gb2312
-            string html = WebConnectActor.getData(url, Encoding.GetEncoding("gb2312"));
+            string html = WebConnectActor.getData(url, Encoding.GetEncoding("gb2312"), cookie);
             HtmlDocument hdoc = new HtmlDocument();
             hdoc.LoadHtml(html);
 
@@ -517,10 +531,16 @@ namespace Native.Csharp.App.Actors
                 var tmp = getText(dw);
                 StringBuilder sb = new StringBuilder();
                 foreach (var t in tmp) if (!string.IsNullOrWhiteSpace(t.Trim())) sb.Append(t + "\r\n");
-                sb.Replace("\r\n\r\n", "\r\n");
+                string[] watermark = new string[] { "百", "度", "知", "道", "问", "答", "来", "自", "内", "容", "版", "权", "专", "属", "zhidao" };
+                foreach (var wm in watermark) sb = sb.Replace("\r\n"+wm+"\r\n", "");
+                sb = sb.Replace("\r\n\r\n", "\r\n");
+                sb = sb.Replace("\r\n\r\n", "\r\n");
                 res.Add(sb.ToString());
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
 
             return res.ToArray();
 
@@ -609,7 +629,7 @@ namespace Native.Csharp.App.Actors
         {
             List<string> answer = new List<string>();
             string askUrl = "http://www.baidu.com/s?wd=" + WebConnectActor.UrlEncode(question);
-            string res = WebConnectActor.getData(askUrl, Encoding.UTF8);
+            string res = WebConnectActor.getData(askUrl, Encoding.UTF8, cookie);
             res = res.Replace("\n", "").Replace("\r", "").Replace(" ", "");
             Regex reg = new Regex("class=\"op_exactqa_s_answer\">(.*?)</div>");
             if (reg.IsMatch(res))
@@ -648,7 +668,7 @@ namespace Native.Csharp.App.Actors
                         answer.Add(tmpstr);
                         //去百度知道查一波
                         askUrl = "http://zhidao.baidu.com/search?word=" + question;
-                        res = WebConnectActor.getData(askUrl);
+                        res = WebConnectActor.getData(askUrl, Encoding.Default,cookie);
                         res = res.Replace("\n", "").Replace("\r", "").Replace(" ", "");
 
                         //如果rank较低就舍弃
@@ -673,7 +693,7 @@ namespace Native.Csharp.App.Actors
                             {
                                 //从知道首页找到最接近的答案的url
                                 askUrl = reg.Match(res).Groups[1].ToString();
-                                res = WebConnectActor.getData(askUrl).Replace("\n", "").Replace("\r", "").Replace(" ", "");
+                                res = WebConnectActor.getData(askUrl, Encoding.Default,cookie).Replace("\n", "").Replace("\r", "").Replace(" ", "");
 
                                 Regex[] regs = new Regex[]{
                                     //被采纳答案

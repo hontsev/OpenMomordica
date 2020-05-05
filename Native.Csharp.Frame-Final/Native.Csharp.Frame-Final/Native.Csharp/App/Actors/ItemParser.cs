@@ -246,9 +246,15 @@ namespace Native.Csharp.App.Actors
             return res;
         }
 
+        /// <summary>
+        /// 移除内部的各种换行、空格。
+        /// </summary>
+        /// <param name="ori"></param>
+        /// <param name="ignoreNewline">true则保留换行符</param>
+        /// <returns></returns>
         public static string removeBlank(string ori, bool ignoreNewline = false)
         {
-            string blanks = " \t";
+            string blanks = " 　\t";
             if (!ignoreNewline) blanks += "\r\n";
 
             StringBuilder sb = new StringBuilder();
