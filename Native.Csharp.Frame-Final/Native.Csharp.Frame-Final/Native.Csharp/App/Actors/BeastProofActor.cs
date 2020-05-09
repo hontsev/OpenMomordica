@@ -46,9 +46,9 @@ namespace Native.Csharp.App.Actors
                     if (vitem.Length >= 2) bhdict[vitem[0]] = int.Parse(vitem[1]);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                FileIOActor.log(ex);
             }
         }
 

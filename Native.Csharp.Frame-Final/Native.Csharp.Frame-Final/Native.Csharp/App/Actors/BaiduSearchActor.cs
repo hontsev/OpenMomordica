@@ -19,7 +19,7 @@ namespace Native.Csharp.App.Actors
         string path = "";
         string imageWords = "imagewords.txt";
         string cookief = "cookie.txt";
-        string answerPath = "answer\\";
+        //string answerPath = "answer\\";
         string cookie = "";
         Random rand = new Random();
         ItemParser parser = new ItemParser();
@@ -72,17 +72,6 @@ namespace Native.Csharp.App.Actors
 
             return str;
         }
-
-        public static string convertUnicodeChinese(string str)
-        {
-            string res = "";
-
-
-
-            return res;
-        }
-
-
 
         /// <summary>
         /// 从百度知识图谱数据中取得问题的答案
@@ -167,43 +156,6 @@ namespace Native.Csharp.App.Actors
 
             return result;
         }
-        /// <summary>
-        /// 暂时不可用
-        /// </summary>
-        /// <param name="question"></param>
-        /// <returns></returns>
-        public string getAsklibResult(string question)
-        {
-            string url = string.Format("http://www.asklib.com/s/{0}", WebConnectActor.UrlEncode(question));
-            string res = "";
-            //List<string> res = new List<string>();
-            string html = WebConnectActor.getData(url, Encoding.UTF8);
-            HtmlDocument hdoc = new HtmlDocument();
-            hdoc.LoadHtml(html);
-            try
-            {
-                HtmlNode favurl = null;
-                try
-                {
-                    //res = html; return res;
-                    favurl = hdoc.DocumentNode.SelectSingleNode("//div[@class=\"p15 right\"]").ChildNodes[1];
-                    url = ItemParser.removeBlank(favurl.GetAttributeValue("href", ""), true);
-                    url = "http://www.asklib.com/" + url;
-                    html = WebConnectActor.getData(url, Encoding.UTF8);
-                    hdoc = new HtmlDocument();
-                    hdoc.LoadHtml(html);
-                    var tmp = getText(hdoc.DocumentNode.SelectSingleNode("//div[@class=\"listtip\"]").InnerHtml);
-                    StringBuilder sb = new StringBuilder();
-                    foreach (var t in tmp) if (!string.IsNullOrWhiteSpace(t.Trim())) sb.Append(t + "\r\n");
-                    sb.Replace("\r\n\r\n", "\r\n");
-                    res = sb.ToString();
-                }
-                catch {  }                
-            }
-            catch { }
-
-            return res;
-        }
 
 
         /// <summary>
@@ -216,27 +168,38 @@ namespace Native.Csharp.App.Actors
         {
             List<string> reslist = new List<string>();
             string askUrl = "https://www.baidu.com/s?ie=utf-8&wd=" + WebConnectActor.UrlEncode(words);
-            string html = WebConnectActor.getData(askUrl,  Encoding.UTF8, cookie);
+            string html = WebConnectActor.getData(askUrl, Encoding.UTF8, cookie);
             //var html1 = HttpUtility.UrlDecode(html);
             //var html2 = Regex.Unescape(html);
             //FileIOActor.log(askUrl);
             //FileIOActor.log(html);
             HtmlDocument hdoc = new HtmlDocument();
             hdoc.LoadHtml(html);
+            HtmlNode tnode = null;
 
             //统计数值
             try
             {
-                string gdp = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_gdp_subtitle\"]").InnerText);
-                reslist.Add(gdp);
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_gdp_subtitle\"]");
+                if (tnode != null)
+                {
+                    string gdp = parser.replaceSymbolByDict(tnode.InnerText);
+                    reslist.Add(gdp);
+                }
+
             }
             catch { }
 
             //图谱常识
             try
             {
-                string common = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_exactqa_s_answer\"]").InnerText);
-                reslist.Add(common);
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_exactqa_s_answer\"]");
+                if (tnode != null)
+                {
+                    string common = parser.replaceSymbolByDict(tnode.InnerText);
+                    reslist.Add(common);
+                }
+
             }
             catch { }
 
@@ -251,20 +214,38 @@ namespace Native.Csharp.App.Actors
             //catch { }
             try
             {
-                string gp = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op-stockdynamic-moretab-cur-num c-gap-right-small\"]").InnerText);
-                reslist.Add(gp);
-                string gpzf = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op-stockdynamic-moretab-cur-unit\"]").InnerText.Trim();
-                gpzf = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op-stockdynamic-moretab-cur\"]").InnerText.Trim();
-                foreach (var s in new string[]{"美元","元","镑" }) if (gpzf.Contains(s)) { gpzf = s; break; }
-                reslist.Add(gpzf);
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op-stockdynamic-moretab-cur-num c-gap-right-small\"]");
+                if (tnode != null)
+                {
+                    string gp = parser.replaceSymbolByDict(tnode.InnerText);
+                    reslist.Add(gp);
+                    tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op-stockdynamic-moretab-cur-unit\"]");
+                    if (tnode != null)
+                    {
+                        string gpzf = tnode.InnerText.Trim();
+                        tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op-stockdynamic-moretab-cur\"]");
+                        if (tnode != null)
+                        {
+                            gpzf = tnode.InnerText.Trim();
+                            foreach (var s in new string[] { "美元", "元", "镑" }) if (gpzf.Contains(s)) { gpzf = s; break; }
+                            reslist.Add(gpzf);
+                        }
+                    }
+                }
             }
             catch { }
 
             //热线电话
             try
             {
-                string rx = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_kefupoly_td2\"]").InnerText);
-                reslist.Add(rx);
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_kefupoly_td2\"]");
+                if (tnode != null)
+                {
+                    string rx = parser.replaceSymbolByDict(tnode.InnerText);
+                    reslist.Add(rx);
+                }
+
+
             }
             catch { }
 
@@ -280,17 +261,29 @@ namespace Native.Csharp.App.Actors
             //数学运算
             try
             {
-                string trans = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_new_val_screen_result\"]").InnerText);
-                //string trans = ItemParser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@style=\"font-size:1.4em;line-height:22px;padding-bottom:2px;width:474px;\"]").InnerText);
-                reslist.Add(trans.Trim());
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_new_val_screen_result\"]");
+                if (tnode != null)
+                {
+                    string trans = parser.replaceSymbolByDict(tnode.InnerText);
+                    //string trans = ItemParser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@style=\"font-size:1.4em;line-height:22px;padding-bottom:2px;width:474px;\"]").InnerText);
+                    reslist.Add(trans.Trim());
+                }
+
+
             }
             catch { }
 
             //汇率换算
             try
             {
-                string hl = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_exrate_result\"]").InnerText);
-                reslist.Add(hl);
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_exrate_result\"]");
+                if (tnode != null)
+                {
+                    string hl = parser.replaceSymbolByDict(tnode.InnerText);
+                    reslist.Add(hl);
+                }
+
+
             }
             catch { }
 
@@ -311,8 +304,14 @@ namespace Native.Csharp.App.Actors
             //邮编
             try
             {
-                string dw = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_post_content \"]").InnerText);
-                reslist.Add(dw);
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_post_content \"]");
+                if (tnode != null)
+                {
+                    string dw = parser.replaceSymbolByDict(tnode.InnerText);
+                    reslist.Add(dw);
+                }
+
+
             }
             catch { }
 
@@ -321,9 +320,13 @@ namespace Native.Csharp.App.Actors
             // 去所跳转的页面上找答案
             try
             {
-                string dw = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_best_answer_question_link\"]").GetAttributeValue("href", ""));
-                var answers = getBaiduZhidaoAnswers(dw)[0];
-                reslist.Add(answers);
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_best_answer_question_link\"]");
+                if (tnode != null)
+                {
+                    string dw = parser.replaceSymbolByDict(tnode.GetAttributeValue("href", ""));
+                    var answers = getBaiduZhidaoAnswers(dw,1)[0];
+                    reslist.Add(answers);
+                }
             }
             catch { }
 
@@ -331,9 +334,15 @@ namespace Native.Csharp.App.Actors
             // 去所跳转的页面上找答案
             try
             {
-                string dw = parser.removeUnText(hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_generalqa_answer c-gap-bottom-small op_generalqa_answer_first\"]").ChildNodes[3].FirstChild.GetAttributeValue("href", ""));
-                var answers = getBaiduZhidaoAnswersByUrl(dw)[0];
-                reslist.Add(answers);
+                tnode = hdoc.DocumentNode.SelectSingleNode("//*[@class=\"op_generalqa_answer c-gap-bottom-small op_generalqa_answer_first\"]");
+                if (tnode != null)
+                {
+                    string dw = parser.replaceSymbolByDict(tnode.ChildNodes[3].FirstChild.GetAttributeValue("href", ""));
+                    var answers = getBaiduZhidaoAnswersByUrl(dw)[0];
+                    reslist.Add(answers);
+                }
+
+
             }
             catch { }
 
@@ -358,33 +367,39 @@ namespace Native.Csharp.App.Actors
         /// <returns></returns>
         public string[] getText(string html)
         {
+
             if (string.IsNullOrWhiteSpace(html) || html[0] != '<')
             {
-                return new string[] { parser.removeUnText(html) };
+                return new string[] { parser.replaceSymbolByDict(html) };
             }
             List<string> res = new List<string>();
-            HtmlDocument hdoc = new HtmlDocument();
-            hdoc.LoadHtml(html);
-
-            foreach (var node in hdoc.DocumentNode.ChildNodes)
+           
+            try
             {
-                var text = parser.removeUnText(node.InnerText).Trim();
-                if (!string.IsNullOrWhiteSpace(text)) res.Add(text);
-                //if (node.NodeType == HtmlNodeType.Text)
-                //{
-                //    res.Add(ItemParser.removeUnText(node.InnerText));
-                //}
-                ////else if (node.Name == "br")
-                ////{
-                ////    res.Add("\r\n");
-                ////}
-                //else if (node.NodeType == HtmlNodeType.Element)
-                //{
-                //    var tmp = getText(node.InnerHtml);
-                //    foreach (var t in tmp) res.Add(t);
-                //}
+                HtmlDocument hdoc = new HtmlDocument();
+                hdoc.LoadHtml(html);
+                foreach (var node in hdoc.DocumentNode.ChildNodes)
+                {
+                    var text = parser.replaceSymbolByDict(node.InnerText).Trim();
+                    if (!string.IsNullOrWhiteSpace(text)) res.Add(text);
+                    //if (node.NodeType == HtmlNodeType.Text)
+                    //{
+                    //    res.Add(ItemParser.removeUnText(node.InnerText));
+                    //}
+                    ////else if (node.Name == "br")
+                    ////{
+                    ////    res.Add("\r\n");
+                    ////}
+                    //else if (node.NodeType == HtmlNodeType.Element)
+                    //{
+                    //    var tmp = getText(node.InnerHtml);
+                    //    foreach (var t in tmp) res.Add(t);
+                    //}
 
+                }
             }
+            catch { }
+           
 
             return res.ToArray();
         }
@@ -437,6 +452,11 @@ namespace Native.Csharp.App.Actors
             return res.ToArray();
         }
 
+        /// <summary>
+        /// 去掉贴吧回复的无用字符
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
         string removeReplyWords(string str)
         {
             str = str.Replace("??", "");
@@ -472,13 +492,13 @@ namespace Native.Csharp.App.Actors
                 HtmlNode favurl = null;
                 try
                 {
-                    favurl = hdoc.DocumentNode.SelectSingleNode("//dt[@class=\"dt mb-8\"]").ChildNodes[1];
+                    var node = hdoc.DocumentNode.SelectSingleNode("//dt[@class=\"dt mb-8\"]");
+                    if (node != null) favurl = node.ChildNodes[1];
                 }
                 catch (Exception ex) { FileIOActor.log(ex); }
 
                 var urls = hdoc.DocumentNode.SelectNodes("//a[@class=\"ti\"]");
-                if (favurl != null)
-                    urls.Insert(0, favurl);
+                if (favurl != null) urls.Insert(0, favurl);
                 foreach (var aurl in urls)
                 {
                     string dw = ItemParser.removeBlank(aurl.GetAttributeValue("href", ""), true);
@@ -497,15 +517,6 @@ namespace Native.Csharp.App.Actors
             return res.ToArray();
         }
 
-        //public string[] getBaiduBaikeAnswer(string sentence)
-        //{
-        //    string url = string.Format("https://baike.baidu.com/item/{0}", WebConnectActor.UrlEncode(sentence));
-        //    List<string> res = new List<string>();
-        //    string html = WebConnectActor.getData(url, Encoding.GetEncoding("gb2312"));
-        //    HtmlDocument hdoc = new HtmlDocument();
-        //    hdoc.LoadHtml(html);
-
-        //}
 
         /// <summary>
         /// 根据百度知道的页面来查找是否有最佳答案或者用户认可答案之类的
@@ -531,10 +542,21 @@ namespace Native.Csharp.App.Actors
                 var tmp = getText(dw);
                 StringBuilder sb = new StringBuilder();
                 foreach (var t in tmp) if (!string.IsNullOrWhiteSpace(t.Trim())) sb.Append(t + "\r\n");
-                string[] watermark = new string[] { "百", "度", "知", "道", "问", "答", "来", "自", "内", "容", "版", "权", "专", "属", "zhidao" };
+                string[] watermark = new string[] { "百", "度", "知", "道", "问", "答", "来", "自", "内", "容", "版", "权", "专", "属", "zhidao","源","copy","抄","袭", "zd" };
                 foreach (var wm in watermark) sb = sb.Replace("\r\n"+wm+"\r\n", "");
+                Regex rg = new Regex("[a-f0-9]{50}");
+                
                 sb = sb.Replace("\r\n\r\n", "\r\n");
                 sb = sb.Replace("\r\n\r\n", "\r\n");
+                string r = sb.ToString();
+                var rgr  =rg.Matches(r);
+                if (rgr.Count > 0)
+                {
+                    foreach(Match m in rgr)
+                    {
+                        r = r.Replace(m.Groups[0].ToString(), "");
+                    }
+                }
                 res.Add(sb.ToString());
             }
             catch (Exception ex)
@@ -544,235 +566,6 @@ namespace Native.Csharp.App.Actors
 
             return res.ToArray();
 
-            //res = reg.Match(res).Groups[1].ToString();
-            //reg = new Regex("href=\"(.*?)\"");
-            //if (reg.IsMatch(res))
-            //{
-            //    //从知道首页找到最接近的答案的url
-            //    askUrl = reg.Match(res).Groups[1].ToString();
-            //    res = WebConnectHelper.getData(askUrl).Replace("\n", "").Replace("\r", "").Replace(" ", "");
-
-            //    Regex[] regs = new Regex[]{
-            //                        //被采纳答案
-            //                        new Regex("wgt-best(.*?)i-quality-icon"),
-            //                        new Regex("wgt-best(.*?)answer-share-widget"),
-            //                        //尝试优质答案
-            //                        new Regex("quality-content-detailcontent\">(.*?)</div>"),
-            //                        //尝试网友推荐答案
-            //                        new Regex("wgt-recommend(.*?)i-quality-icon")
-
-            //                    };
-            //    bool ismatch = false;
-            //    foreach (var treg in regs)
-            //    {
-            //        if (treg.IsMatch(res))
-            //        {
-            //            //tmpOutputSentence.Add(res);
-            //            res = treg.Match(res).Groups[1].ToString();
-            //            ismatch = true;
-            //            break;
-            //        }
-            //    }
-            //    if (ismatch)
-            //    {
-            //        reg = new Regex("<pre(.*?)>(.*?)</pre>");
-            //        if (reg.IsMatch(res))
-            //        {
-            //            res = reg.Match(res).Groups[2].ToString();
-            //            res = res.Replace("<br>", "\r\n");
-            //            res = res.Replace("<br/>", "\r\n");
-            //            res = replaceImageWords(res);
-            //            answer.Add(res);
-            //        }
-            //    }
-
-            //}
-        }
-
-
-        //public static string[] getSearchResult(string words, int pagenum = 10)
-        //{
-        //    List<string> reslist = new List<string>();
-        //    for (int i = 0; i < pagenum; i++)
-        //    {
-
-        //        string askUrl = "http://www.baidu.com/s?wd=" + WebConnectHelper.UrlEncode(words) + "&pn=" + (i * 10);
-        //        string res = WebConnectHelper.getData(askUrl, Encoding.UTF8);
-        //        res = res.Replace("\n", "").Replace("\r", "");
-        //        HtmlDocument hdoc = new HtmlDocument();
-        //        hdoc.LoadHtml(res);
-
-        //        HtmlNodeCollection collection = hdoc.DocumentNode.SelectNodes("//*[@class=\"c-abstract\"]");
-        //        if (collection != null)
-        //        {
-        //            foreach (HtmlNode node in collection)
-        //            {
-        //                reslist.Add(node.InnerText);
-        //            }
-        //            collection = hdoc.DocumentNode.SelectNodes("//*[@class=\"t\"]");
-        //            foreach (HtmlNode node in collection)
-        //            {
-        //                reslist.Add(node.InnerText);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            return null;
-        //        }
-
-        //    }
-
-        //    return reslist.ToArray();
-        //}
-
-        public string[] getWebsiteAnswer(string question)
-        {
-            List<string> answer = new List<string>();
-            string askUrl = "http://www.baidu.com/s?wd=" + WebConnectActor.UrlEncode(question);
-            string res = WebConnectActor.getData(askUrl, Encoding.UTF8, cookie);
-            res = res.Replace("\n", "").Replace("\r", "").Replace(" ", "");
-            Regex reg = new Regex("class=\"op_exactqa_s_answer\">(.*?)</div>");
-            if (reg.IsMatch(res))
-            {
-                //说明百度首页给出了智能答案
-                res = reg.Match(res).Groups[1].ToString();
-                reg = new Regex("target=\"_blank\">(.*?)</a>");
-                if (reg.IsMatch(res))
-                {
-                    res = reg.Match(res).Groups[1].ToString();
-                    answer.Add(res);
-                }
-
-            }
-            else
-            {
-                //判断是否是百度统计相关答案
-                reg = new Regex("<p class='op_gdp_subtitle'>(.*?)</p>");
-                if (reg.IsMatch(res))
-                {
-                    res = reg.Match(res).Groups[1].ToString();
-                    answer.Add(res);
-                }
-                else
-                {
-                    //判断是否是计算题答案
-                    reg = new Regex("line-height:22px;padding-bottom:2px;width:474px;\">(.*?)</div>");
-                    if (reg.IsMatch(res))
-                    {
-                        res = reg.Match(res).Groups[1].ToString().Replace("&nbsp;", " ");
-                        answer.Add(res);
-                    }
-                    else
-                    {
-                        string tmpstr = "正在百度问题：" + question;
-                        answer.Add(tmpstr);
-                        //去百度知道查一波
-                        askUrl = "http://zhidao.baidu.com/search?word=" + question;
-                        res = WebConnectActor.getData(askUrl, Encoding.Default,cookie);
-                        res = res.Replace("\n", "").Replace("\r", "").Replace(" ", "");
-
-                        //如果rank较低就舍弃
-                        reg = new Regex("data-rank=\"(.*?)\"");
-                        if (reg.IsMatch(res))
-                        {
-                            string rank = reg.Match(res).Groups[1].ToString().Split(':')[0];
-                            int rankvalue = Int32.Parse(rank);
-                            if (rankvalue <= 500)
-                            {
-                                //rank太低了，不再查询答案。
-                                //return false;
-                            }
-                        }
-
-                        reg = new Regex("data-log-area=\"list\">(.*?)</a>");
-                        if (reg.IsMatch(res))
-                        {
-                            res = reg.Match(res).Groups[1].ToString();
-                            reg = new Regex("href=\"(.*?)\"");
-                            if (reg.IsMatch(res))
-                            {
-                                //从知道首页找到最接近的答案的url
-                                askUrl = reg.Match(res).Groups[1].ToString();
-                                res = WebConnectActor.getData(askUrl, Encoding.Default,cookie).Replace("\n", "").Replace("\r", "").Replace(" ", "");
-
-                                Regex[] regs = new Regex[]{
-                                    //被采纳答案
-                                    new Regex("wgt-best(.*?)i-quality-icon"),
-                                    new Regex("wgt-best(.*?)answer-share-widget"),
-                                    //尝试优质答案
-                                    new Regex("quality-content-detailcontent\">(.*?)</div>"),
-                                    //尝试网友推荐答案
-                                    new Regex("wgt-recommend(.*?)i-quality-icon")
-
-                                };
-                                bool ismatch = false;
-                                foreach (var treg in regs)
-                                {
-                                    if (treg.IsMatch(res))
-                                    {
-                                        //tmpOutputSentence.Add(res);
-                                        res = treg.Match(res).Groups[1].ToString();
-                                        ismatch = true;
-                                        break;
-                                    }
-                                }
-                                if (ismatch)
-                                {
-                                    reg = new Regex("<pre(.*?)>(.*?)</pre>");
-                                    if (reg.IsMatch(res))
-                                    {
-                                        res = reg.Match(res).Groups[2].ToString();
-                                        res = res.Replace("<br>", "\r\n");
-                                        res = res.Replace("<br/>", "\r\n");
-                                        res = replaceImageWords(res);
-                                        answer.Add(res);
-                                    }
-                                }
-
-
-
-                                //{
-
-                                //    reg = ;
-                                //    if (reg.IsMatch(res))
-                                //    {
-                                //        res = reg.Match(res).Groups[1].ToString();
-                                //        res = res.Replace("<br>", "\r\n");
-                                //        res = res.Replace("<br/>", "\r\n");
-                                //        res = replaceImageWords(res);
-                                //        tmpOutputSentence.Add(res);
-                                //        isa = true;
-                                //    }
-                                //    else
-                                //    {
-                                //        ;
-                                //        if (reg.IsMatch(res))
-                                //        {
-                                //            res = reg.Match(res).Groups[1].ToString();
-                                //            reg = new Regex("<pre(.*?)>(.*?)</pre>");
-                                //            if (reg.IsMatch(res))
-                                //            {
-                                //                res = reg.Match(res).Groups[2].ToString();
-                                //                res = res.Replace("<br>", "\r\n");
-                                //                res = res.Replace("<br/>", "\r\n");
-                                //                res = replaceImageWords(res);
-                                //                tmpOutputSentence.Add(res);
-                                //                isa = true;
-                                //            }
-                                //        }
-                                //    }
-                                //}
-
-                            }
-                        }
-                    }
-                }
-            }
-
-
-
-
-            return answer.ToArray();
         }
 
     }
