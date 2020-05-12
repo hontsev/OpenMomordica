@@ -325,14 +325,14 @@ namespace Native.Csharp.App.Actors
                 penlist = FileIOActor.readLines(path + penName, Encoding.UTF8).ToList();
 
                 // duilian
-                var lines = File.ReadAllLines(path+duiP1f, Encoding.UTF8);
+                var lines = FileIOActor.readLines(path+duiP1f, Encoding.UTF8);
                 foreach (var line in lines)
                 {
                     var items = line.Split('\t');
                     var items2 = items[1].Split(',');
                     cf[items[0]] = items2;
                 }
-                lines = File.ReadAllLines(path + duiP2f, Encoding.UTF8);
+                lines = FileIOActor.readLines(path + duiP2f, Encoding.UTF8);
                 foreach (var line in lines)
                 {
                     var items = line.Split('\t');
@@ -341,7 +341,7 @@ namespace Native.Csharp.App.Actors
                 }
 
                 // junk
-                lines = File.ReadAllLines(path + junkf, Encoding.UTF8);
+                lines = FileIOActor.readLines(path + junkf, Encoding.UTF8);
                 
                 List<string> nowline=new List<string>();
                 foreach(var line in lines)
@@ -366,7 +366,7 @@ namespace Native.Csharp.App.Actors
 
 
                 // symbols
-                lines = File.ReadAllLines(path + symbolf, Encoding.UTF8);
+                lines = FileIOActor.readLines(path + symbolf, Encoding.UTF8);
                 symbollist = new Dictionary<string, List<string>>();
                 foreach(var line in lines)
                 {
@@ -382,7 +382,7 @@ namespace Native.Csharp.App.Actors
                 }
 
                 // cangtou
-                lines = File.ReadAllLines(path + pyf, Encoding.UTF8);
+                lines = FileIOActor.readLines(path + pyf, Encoding.UTF8);
                 foreach (var line in lines)
                 {
                     var items = line.Trim().Split(' ');
@@ -403,7 +403,7 @@ namespace Native.Csharp.App.Actors
                         }
                     }
                 }
-                lines = File.ReadAllLines(path + cangtou5f, Encoding.UTF8);
+                lines = FileIOActor.readLines(path + cangtou5f, Encoding.UTF8);
                 foreach (var line in lines)
                 {
                     var ttmp = line.Trim();
@@ -439,7 +439,7 @@ namespace Native.Csharp.App.Actors
                         }
                     }
                 }
-                lines = File.ReadAllLines(path + cangtou7f, Encoding.UTF8);
+                lines = FileIOActor.readLines(path + cangtou7f, Encoding.UTF8);
                 foreach (var line in lines)
                 {
                     var ttmp = line.Trim();

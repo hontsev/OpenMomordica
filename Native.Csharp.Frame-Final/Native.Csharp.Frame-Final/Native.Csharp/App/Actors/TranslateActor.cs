@@ -44,24 +44,32 @@ namespace Native.Csharp.App.Actors
                     if (vitem.Length >= 2) ctlist[vitem[0]] = vitem[1];
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                FileIOActor.log(ex);
             }
         }
 
         string getTranslateUrl(string from, string to)
         {
-            string fn = "auto", tn = "zh-CN";
-            if (ctlist.ContainsKey(from)) fn = ctlist[from];
-            else if (ctlist.ContainsKey(from + "文")) fn = ctlist[from + "文"];
-            else if (ctlist.ContainsKey(from + "语")) fn = ctlist[from + "语"];
+            try
+            {
+                string fn = "auto", tn = "zh-CN";
+                if (ctlist.ContainsKey(from)) fn = ctlist[from];
+                else if (ctlist.ContainsKey(from + "文")) fn = ctlist[from + "文"];
+                else if (ctlist.ContainsKey(from + "语")) fn = ctlist[from + "语"];
 
-            if (ctlist.ContainsKey(to)) tn = ctlist[to];
-            else if (ctlist.ContainsKey(to + "文")) tn = ctlist[to + "文"];
-            else if (ctlist.ContainsKey(to + "语")) tn = ctlist[to + "语"];
+                if (ctlist.ContainsKey(to)) tn = ctlist[to];
+                else if (ctlist.ContainsKey(to + "文")) tn = ctlist[to + "文"];
+                else if (ctlist.ContainsKey(to + "语")) tn = ctlist[to + "语"];
 
-            return $"https://translate.google.cn/translate_a/single?client=gtx&dt=t&ie=UTF-8&oe=UTF-8&sl={fn}&tl={tn}";
+                return $"https://translate.google.cn/translate_a/single?client=gtx&dt=t&ie=UTF-8&oe=UTF-8&sl={fn}&tl={tn}";
+            }
+            catch(Exception ex)
+            {
+                FileIOActor.log(ex);
+                return "";
+            }
 
         }
 
@@ -76,13 +84,14 @@ namespace Native.Csharp.App.Actors
             InitTkk();
             string tk = GetTK(src);
             string url = $"{getTranslateUrl(from, to)}&tk={tk}&q={UrlEncode(src)}";
-            //FileIOActor.log(url);
+            
             //return url;
-            string httpresult = WebConnectActor.getData(url, Encoding.UTF8);
-           // FileIOActor.log(httpresult);
+            string httpresult = WebConnectActor.getData(url, Encoding.UTF8,"",true);
+            FileIOActor.log(httpresult);
+            string res = "";
             try
             {
-                string res = "";
+                
                 JArray jo = (JArray)JsonConvert.DeserializeObject(httpresult);
                 //JObject jo = JObject.Parse(httpresult);
                 //FileIOActor.log(jo[0].ToString());
@@ -98,9 +107,10 @@ namespace Native.Csharp.App.Actors
                 }
                 return res.Trim();
             }
-            catch(Exception e)
+            catch(Exception ex)
             {
-                FileIOActor.log(e.Message + "\r\n" + e.StackTrace);
+                FileIOActor.log(ex);
+                FileIOActor.log($"url:{url}\r\nres:{res}");
             }
             
 
@@ -149,10 +159,13 @@ namespace Native.Csharp.App.Actors
 #endif
             try
             {
-                tkkHtml = WebConnectActor.getData(url);
+                tkkHtml = WebConnectActor.getData(url,Encoding.UTF8, "", true);
                 tkk = GetTkk(tkkHtml);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
         }
         private string GetTkk(string tkkHtml)
         {
@@ -165,6 +178,7 @@ namespace Native.Csharp.App.Actors
             }
             catch (Exception ex)
             {
+                FileIOActor.log(ex);
             }
             return tempStr;
         }
@@ -270,8 +284,9 @@ namespace Native.Csharp.App.Actors
                 int b = a > 2147483647 ? (int)(a - 4294967296) : a < -2147483647 ? (int)(a + 4294967296) : (int)a;
                 return b;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                FileIOActor.log(ex);
                 return 0;
             }
         }
