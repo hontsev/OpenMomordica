@@ -1196,7 +1196,6 @@ namespace Native.Csharp.App.Event
                 case "云杰":msg += modes.getZYJ(question);break;
                 default: msg += modes.getAnswerWithMode(user, question, modeName); break;
             }
-            msg = config.replaceSSTV(msg);
 
 
             if (string.IsNullOrWhiteSpace(msg)) return;
@@ -1247,7 +1246,6 @@ namespace Native.Csharp.App.Event
                 }
             }
 
-            msg = config.replaceSSTV(msg);
             
 
             if (string.IsNullOrWhiteSpace(msg)) return;
@@ -1415,6 +1413,7 @@ namespace Native.Csharp.App.Event
             {
                 return;
             }
+            msg = mmdk.config.replaceSSTV(msg);
             Common.CqApi.SendPrivateMessage(user, msg);
         }
 
@@ -1493,6 +1492,7 @@ namespace Native.Csharp.App.Event
 
             int maxlen = 1600;
             int maxt = 5;
+            msg = mmdk.config.replaceSSTV(msg);
             do
             {
                 maxt -= 1;

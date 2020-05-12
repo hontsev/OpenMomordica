@@ -108,6 +108,9 @@ namespace Native.Csharp.App.Actors
                     if (items.Length >= 2)
                     {
                         sstvs.Add(new string[] { items[0], items[1] });
+                    }else if (items.Length >= 1)
+                    {
+                        sstvs.Add(new string[] { items[0], "" });
                     }
                 }
 
