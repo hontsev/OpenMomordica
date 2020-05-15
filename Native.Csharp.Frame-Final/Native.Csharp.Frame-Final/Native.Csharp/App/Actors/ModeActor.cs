@@ -341,28 +341,32 @@ namespace Native.Csharp.App.Actors
                 }
 
                 // junk
-                lines = FileIOActor.readLines(path + junkf, Encoding.UTF8);
-                
-                List<string> nowline=new List<string>();
-                foreach(var line in lines)
+                if(File.Exists(path + junkf))
                 {
-                    if (string.IsNullOrWhiteSpace(line))
+                    lines = File.ReadAllLines(path + junkf, Encoding.UTF8);
+
+                    List<string> nowline = new List<string>();
+                    foreach (var line in lines)
                     {
-                        if(nowline.Count > 0)
+                        if (string.IsNullOrWhiteSpace(line))
                         {
-                            junks.Add(nowline);
-                            nowline = new List<string>();
+                            if (nowline.Count > 0)
+                            {
+                                junks.Add(nowline);
+                                nowline = new List<string>();
+                            }
+                        }
+                        else
+                        {
+                            nowline.Add(line.Trim());
                         }
                     }
-                    else
+                    if (nowline.Count > 0)
                     {
-                        nowline.Add(line.Trim());
+                        junks.Add(nowline);
                     }
                 }
-                if (nowline.Count > 0)
-                {
-                    junks.Add(nowline);
-                }
+              
 
 
                 // symbols
