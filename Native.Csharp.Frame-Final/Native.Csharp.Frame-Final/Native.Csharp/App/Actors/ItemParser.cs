@@ -79,6 +79,12 @@ namespace Native.Csharp.App.Actors
             return sb.ToString();
         }
 
+        static string sym = "，。、；：【】？“”‘’《》！￥…—{}[]()+=-/*!@#$%^&_|,.?:;/\\'\" \t\r\n";
+        public static bool isSymbol(char ch)
+        {
+            return sym.Contains(ch);
+        }
+
         /// <summary>
         /// 去除字符串中的中英文标点和特殊字符
         /// </summary>
@@ -87,10 +93,10 @@ namespace Native.Csharp.App.Actors
         public static string removeSymbol(string ori)
         {
             StringBuilder sb = new StringBuilder();
-            string sym = "，。、；：【】？“”‘’《》！￥…—{}[]()+=-/*!@#$%^&_|,.?:;/\\'\" \t";
+            
             foreach(var c in ori)
             {
-                if (!sym.Contains(c)) sb.Append(c);
+                if (!isSymbol(c)) sb.Append(c);
             }
             return sb.ToString();
         }

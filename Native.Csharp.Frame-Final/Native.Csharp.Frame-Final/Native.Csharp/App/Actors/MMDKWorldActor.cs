@@ -1151,7 +1151,6 @@ namespace Native.Csharp.App.Actors
                 else if (cmd == "抽卡介绍")
                 {
                     outputMessage(group, -1, getDesc());
-                    //outputMessage(group, -1, $"目前卡池是{server.pool.name}:{server.pool.desc}，每抽消耗{server.pool.cost}枚{BTCActor.unitName}");
                     return true;
                 }
                 else if (cmd.StartsWith("换池"))

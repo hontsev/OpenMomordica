@@ -68,6 +68,7 @@ namespace Native.Csharp.App.Event
         DivinationActor divi = new DivinationActor();
         ItemActor itema = new ItemActor();
         MMDKWorldActor mmdkw = new MMDKWorldActor();
+        MessageHistoryActor mha = new MessageHistoryActor();
 
         static MomordicaMain()
         {
@@ -95,7 +96,7 @@ namespace Native.Csharp.App.Event
                     try
                     {
                         if (Directory.Exists(rootDict + historyPath)) Directory.CreateDirectory(rootDict + historyPath);
-
+                        mha.init(rootDict + historyPath);
                         btc.init(sendGroup, getQQNick, rootDict + DataBTCPath);
                         modes.init(sendGroup, rootDict + DataModePath);
                         baidu.init(rootDict + DataBaiduPath);
@@ -139,7 +140,8 @@ namespace Native.Csharp.App.Event
             }
 
             // 模式配置
-            if (config.groupIs(group, "测试") || (!config.testonly && config.groupIs(group, "闲聊")))
+            // if (config.groupIs(group, "测试") || (!config.testonly && config.groupIs(group, "闲聊")))
+            if (config.groupIs(group, "测试") || (!config.testonly && true))
             {
                 if (msg.Contains("模式列表"))
                 {
@@ -157,7 +159,7 @@ namespace Native.Csharp.App.Event
                     {
                         string mode = moderes.Groups[1].ToString();
                         string swit = moderes.Groups[2].ToString().ToLower();
-                        if (swit == "off") mode = "正常";
+                        if (swit == "off") mode = "混沌";
                         if (!modes.modedict.ContainsKey(mode))
                         {
                             if (config.groupIs(group, "测试") && (mode == "测试" || mode == "喷人"))
@@ -166,7 +168,7 @@ namespace Native.Csharp.App.Event
                             }
                             else
                             {
-                                string modeindexs = "还没有这个模式（小声）";
+                                string modeindexs = "我还没有这个模式";
                                 if (isGroup) sendGroup(group, user, modeindexs);
                                 else sendPrivate(user, modeindexs);
 
@@ -488,37 +490,37 @@ namespace Native.Csharp.App.Event
 
                 }
 
-                if (msg.StartsWith("替换") && (config.personIs(user, "管理员") || config.groupIs(group, "测试")))
-                {
-                    var item = msg.Substring(2).Split('=');
-                    if (item.Length >= 2)
-                    {
-                        string res = "";
-                        itema.inputRep(item[0], item[1]);
-                        //res = itema.getResult(res);
-                        res = $"已存储替换，{item[0]}=>{item[1]}";
+                //if (msg.StartsWith("替换") && (config.personIs(user, "管理员") || config.groupIs(group, "测试")))
+                //{
+                //    var item = msg.Substring(2).Split('=');
+                //    if (item.Length >= 2)
+                //    {
+                //        string res = "";
+                //        itema.inputRep(item[0], item[1]);
+                //        //res = itema.getResult(res);
+                //        res = $"已存储替换，{item[0]}=>{item[1]}";
 
-                        if (isGroup) sendGroup(group, user, res);
-                        else sendPrivate(user, res);
-                        return true;
-                    }
+                //        if (isGroup) sendGroup(group, user, res);
+                //        else sendPrivate(user, res);
+                //        return true;
+                //    }
 
-                }
-                if (msg.StartsWith("公式") && (config.personIs(user, "管理员") || config.groupIs(group, "测试")))
-                {
-                    var item = msg.Substring(2).Split('=');
-                    if (item.Length >= 2)
-                    {
-                        string res = "";
-                        itema.inputExp(item[0], item[1]);
-                        //res = itema.getResult(res);
-                        res = $"已存储公式，{item[0]}=>{item[1]}";
+                //}
+                //if (msg.StartsWith("公式") && (config.personIs(user, "管理员") || config.groupIs(group, "测试")))
+                //{
+                //    var item = msg.Substring(2).Split('=');
+                //    if (item.Length >= 2)
+                //    {
+                //        string res = "";
+                //        itema.inputExp(item[0], item[1]);
+                //        //res = itema.getResult(res);
+                //        res = $"已存储公式，{item[0]}=>{item[1]}";
 
-                        if (isGroup) sendGroup(group, user, res);
-                        else sendPrivate(user, res);
-                        return true;
-                    }
-                }
+                //        if (isGroup) sendGroup(group, user, res);
+                //        else sendPrivate(user, res);
+                //        return true;
+                //    }
+                //}
 
                 //// 天气 
                 //if (msg.EndsWith("天气"))
@@ -684,7 +686,6 @@ namespace Native.Csharp.App.Event
                         foreach (var c in msg) res = c + res;
                         if (!string.IsNullOrWhiteSpace(res))
                         {
-
                             if (isGroup) sendGroup(group, user, res);
                             else sendPrivate(user, res);
                             return true;
@@ -782,7 +783,6 @@ namespace Native.Csharp.App.Event
                         if (res.Length > 0)
                         {
                             res = res.Replace("【D】", config.myQQ.ToString()).Replace("【C】", config.askName);
-
                             if (isGroup) sendGroup(group, user, res);
                             else sendPrivate(user, res);
                             return true;
@@ -830,6 +830,25 @@ namespace Native.Csharp.App.Event
                     {
 
                     }
+                }
+                if (msg.StartsWith("乱序"))
+                {
+                    try
+                    {
+                        msg = msg.Substring(2).Trim();
+                        string res = modes.getShuffle(msg);
+                        if (res.Length > 0)
+                        {
+                            if (isGroup) sendGroup(group, user, res);
+                            else sendPrivate(user, res);
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+                    
                 }
 
 
@@ -942,16 +961,13 @@ namespace Native.Csharp.App.Event
                     if (msg == "赛马" && (!config.groupIs(group, "测试") && !racehorse.isAllow(group)))
                     {
                         // ignore horse cmd
+                        return true;
                     }
                     else
                     {
                         if (racehorse.dealCmd(user, group, msg)) return true;
                     }
                 }
-                //else
-                //{
-                //    sendGroup(group, user, "*由于相关法律法规原因，该功能暂时无法使用*");
-                //}
 
 
                 if (msg == "富豪榜" || msg == "富人榜")
@@ -990,7 +1006,6 @@ namespace Native.Csharp.App.Event
             if (config.groupIs(group, "测试"))
             {
                 // 测试群专属
-
                 Regex qz = new Regex("(.+)谴责(.+)的(.+)");
                 var matchqz = qz.Match(msg);
                 if (matchqz.Success)
@@ -1096,9 +1111,9 @@ namespace Native.Csharp.App.Event
             else
             {
                 // dont chat
+                return false;
                 return true;
             }
-
         }
 
         /// <summary>
@@ -1172,7 +1187,7 @@ namespace Native.Csharp.App.Event
         {
             tryInit();
             question = ItemParser.replaceCoolQEmojis(question.Trim());
-            saveMsg(group, user, question);
+            mha.saveMsg(group, user, question);
             if (user==config.myQQ || !askme(ref question)) return;
             if (!config.allowuser(user)) return;
             if (dealCmd(group, user, question))
@@ -1200,7 +1215,7 @@ namespace Native.Csharp.App.Event
 
             if (string.IsNullOrWhiteSpace(msg)) return;
             sendGroup(group, user, msg);
-            saveMsg(group, config.myQQ, msg.Trim());
+            mha.saveMsg(group, config.myQQ, msg.Trim());
         }
 
         /// <summary>
@@ -1212,7 +1227,7 @@ namespace Native.Csharp.App.Event
         {
             tryInit();
             question = ItemParser.replaceCoolQEmojis(question.Trim());
-            saveMsg(0, user, question);
+            mha.saveMsg(0, user, question);
             if (!config.allowuser(user)) return;
             if (user == config.masterQQ)
             {
@@ -1251,51 +1266,7 @@ namespace Native.Csharp.App.Event
             if (string.IsNullOrWhiteSpace(msg)) return;
 
             sendPrivate(user, msg);
-            saveMsg(0, user, msg.Trim());
-        }
-
-
-
-        /// <summary>
-        /// 记录群/私人聊天信息到文件中
-        /// </summary>
-        /// <param name="group"></param>
-        /// <param name="user"></param>
-        /// <param name="msg"></param>
-        void saveMsg(long group, long user, string msg)
-        {
-            lock (savemsgMutex)
-            {
-                try
-                {
-                    string time = DateTime.Now.ToString("yyyy-MM-dd_HH:mm:ss");
-                    if (user == config.myQQ) time += "[me]";
-                    if (group <= 0)
-                    {
-                        // private
-                        string ppath = $"{rootDict}{historyPath}\\private\\";
-                        if (!Directory.Exists(ppath)) Directory.CreateDirectory(ppath);
-                        File.AppendAllText($"{ppath}{user}.txt", $"{time}\t{msg}\r\n", Encoding.UTF8);
-                    }
-                    else
-                    {
-                        // group
-                        string ppath = $"{rootDict}{historyPath}\\group\\";
-                        if (!Directory.Exists(ppath)) Directory.CreateDirectory(ppath);
-                        string gfile = $"{ppath}{group}.txt";
-                        if (!File.Exists(gfile))
-                        {
-                            // 第一次入群，主动发一下自我介绍
-                            sendGroup(group, -1, getWelcomeString());
-                        }
-                        File.AppendAllText(gfile, $"{time}\t{user}\t{msg}\r\n", Encoding.UTF8);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    FileIOActor.log(ex);
-                }
-            }
+            mha.saveMsg(0, user, msg.Trim());
         }
 
 

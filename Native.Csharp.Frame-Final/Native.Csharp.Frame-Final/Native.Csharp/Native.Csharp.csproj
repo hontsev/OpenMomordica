@@ -105,6 +105,7 @@
     <Compile Include="App\Actors\FileIOActor.cs" />
     <Compile Include="App\Actors\ItemActor.cs" />
     <Compile Include="App\Actors\ItemParser.cs" />
+    <Compile Include="App\Actors\MessageHistoryActor.cs" />
     <Compile Include="App\Actors\MinesweepActor.cs" />
     <Compile Include="App\Actors\MMDKWorldActor.cs" />
     <Compile Include="App\Actors\ModeActor.cs" />

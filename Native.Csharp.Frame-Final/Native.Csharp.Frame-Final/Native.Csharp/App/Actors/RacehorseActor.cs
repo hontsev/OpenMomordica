@@ -682,8 +682,8 @@ namespace Native.Csharp.App.Actors
             {
                 return true;
             }
-
-            outputMessage(group, -1, $"夜间赛事起止时间为{nightRaceBegin.ToString("HH:mm")}-{nightRaceEnd.ToString("HH:mm")}");
+            string res = $"夜间赛事起止时间为{nightRaceBegin.ToString("HH:mm")}-{nightRaceEnd.ToString("HH:mm")}";
+            outputMessage(group, -1, res);
             return false;
         }
 
@@ -843,6 +843,10 @@ namespace Native.Csharp.App.Actors
         {
             try
             {
+                
+                //return true;
+
+
                 //if (!matches.ContainsKey(group)) matches[group] = new RHMatch(this, group);
                 if (!users.ContainsKey(uid)) users[uid] = new RHUser(uid);
                 RHUser user = users[uid];

@@ -1172,6 +1172,28 @@ namespace Native.Csharp.App.Actors
             }
             return res;
         }
+
+       
+
+        public string getShuffle(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return "";
+            string dealdatas = ItemParser.removeSymbol(str);
+            StringBuilder res = new StringBuilder();
+            foreach(char c in str)
+            {
+                if (ItemParser.isSymbol(c)) res.Append(c);
+                else
+                {
+                    int index = rand.Next(dealdatas.Length);
+                    res.Append(dealdatas[index]);
+                    dealdatas = dealdatas.Remove(index, 1);
+                }
+            }
+
+            return res.ToString() ;
+        }
+
         public string getPen(long group, long user)
         {
             try
