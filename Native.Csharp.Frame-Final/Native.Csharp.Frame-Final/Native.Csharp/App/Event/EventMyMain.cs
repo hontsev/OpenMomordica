@@ -7,8 +7,10 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Native.Csharp.App.Event
@@ -69,6 +71,8 @@ namespace Native.Csharp.App.Event
         ItemActor itema = new ItemActor();
         MMDKWorldActor mmdkw = new MMDKWorldActor();
         MessageHistoryActor mha = new MessageHistoryActor();
+
+        
 
         static MomordicaMain()
         {
@@ -522,41 +526,6 @@ namespace Native.Csharp.App.Event
                 //    }
                 //}
 
-                //// 天气 
-                //if (msg.EndsWith("天气"))
-                //{
-                //    msg = msg.Substring(0, msg.Length - 2);
-                //    string daystr = "今天";
-                //    var daystrs = new string[] { "今天", "明天", "大后天", "后天" };
-                //    foreach (var ds in daystrs)
-                //    {
-                //        if (msg.EndsWith(ds))
-                //        {
-                //            daystr = ds;
-                //            msg = msg.Substring(0, msg.Length - ds.Length);
-                //            break;
-                //        }
-
-                //        if (msg.StartsWith(ds))
-                //        {
-                //            daystr = ds;
-                //            msg = msg.Substring(ds.Length);
-                //            break;
-                //        }
-                //    }
-                //    string wres = weather.getWeather(msg, daystr);
-                //    if (!string.IsNullOrWhiteSpace(wres))
-                //    {
-                //        wres = msg + wres;
-                //        if (isGroup) sendGroup(group, user, wres);
-                //        else sendPrivate(user, wres);
-                //        return true;
-                //    }
-
-                //}
-
-
-
                 // bilibili 功能
                 Regex bsearchreg = new Regex("(\\S+)区有多少(\\S+)");
                 var bseatchres = bsearchreg.Match(msg);
@@ -684,6 +653,7 @@ namespace Native.Csharp.App.Event
                     {
                         string res = "";
                         foreach (var c in msg) res = c + res;
+                        res = res.Replace("\n\r", "\r\n");
                         if (!string.IsNullOrWhiteSpace(res))
                         {
                             if (isGroup) sendGroup(group, user, res);
@@ -1188,6 +1158,63 @@ namespace Native.Csharp.App.Event
             tryInit();
             question = ItemParser.replaceCoolQEmojis(question.Trim());
             mha.saveMsg(group, user, question);
+
+
+            Regex urlrg = new Regex("\\[CQ:share,url=(.+),title=(.+),content=(.+),image=(.*?)\\]");
+            // trans share url
+            try
+            {
+                int urlbegin = question.IndexOf("[CQ:share");
+                if (urlbegin >= 0)
+                {
+                    // exist.
+                    var urlres = urlrg.Match(question);
+                    if (urlres.Success)
+                    {
+                        string url = urlres.Groups[1].Value;
+                        string title = urlres.Groups[2].Value;
+                        string content = urlres.Groups[3].Value;
+                       // string image = urlres.Groups[4].Value;
+                        //url = Regex.Replace(url, "\\?share_medium.*?", "");
+                        if (group <= 0)
+                        {
+                            // user
+                            sendPrivate(user, $"[{user}的链接分享]({title}){content} : {url}");
+                        }
+                        else
+                        {
+                            // group
+                            sendGroup(group, -1, $"[{user}的链接分享]({title}){content} : {url}");
+                        }
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                FileIOActor.log(ex);
+            }
+
+            // save image.
+            //try
+            //{
+            //    int imgindex = question.IndexOf("[CQ:image,file=");
+            //    if (imgindex >= 0)
+            //    {
+            //        int imgindex2 = question.IndexOf("]", imgindex + 15);
+            //        if (imgindex >= 0 && imgindex2 >= 0)
+            //        {
+            //            string imgname = question.Substring(imgindex + 15, imgindex2 - imgindex - 15);
+            //            string imgtmp = getQQImage(imgname);
+            //        }
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    FileIOActor.log(ex);
+            //}
+
+
+
             if (user==config.myQQ || !askme(ref question)) return;
             if (!config.allowuser(user)) return;
             if (dealCmd(group, user, question))

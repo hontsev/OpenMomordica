@@ -104,7 +104,8 @@ namespace Native.Csharp.App.Actors
             {
                 try
                 {
-                    foreach(var item in history.Values)
+                    var items = history.Values;
+                    foreach(var item in items)
                     {
                         item.write();
                     }

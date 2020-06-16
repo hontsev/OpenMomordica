@@ -542,12 +542,17 @@ namespace Native.Csharp.App.Actors
                 var tmp = getText(dw);
                 StringBuilder sb = new StringBuilder();
                 foreach (var t in tmp) if (!string.IsNullOrWhiteSpace(t.Trim())) sb.Append(t + "\r\n");
-                string[] watermark = new string[] { "百", "度", "知", "道", "问", "答", "来", "自", "内", "容", "版", "权", "专", "属", "zhidao","源","copy","抄","袭", "zd", "bai", "du", "zhi", "dao" };
-                foreach (var wm in watermark) sb = sb.Replace("\r\n"+wm+"\r\n", "");
+                string[] watermark = new string[] { "百", "度", "知", "道", "问", "答", "来", "自", "内", "容", "版", "权", "专", "属", "zhidao","源","copy","抄","袭", "zd", "bai", "du", "zhi", "dao", "2113", "4102", "5261", "1653" };
+                foreach (var wm in watermark) sb = sb.Replace("\r\n" + wm + "\r\n", "");
                 Regex rg = new Regex("[a-f0-9]{50}");
-                
-                sb = sb.Replace("\r\n\r\n", "\r\n");
-                sb = sb.Replace("\r\n\r\n", "\r\n");
+                string[] watermark2 = new string[] { "2113", "4102", "5261", "1653" };
+                foreach (var wm in watermark) sb = sb.Replace(wm, "");
+                sb = sb.Replace("\r\n", "");
+                //sb = sb.Replace("\r\n\r\n", "\r\n");
+                //sb = sb.Replace("\r\n\r\n", "\r\n");
+                //sb = sb.Replace("\r\n\r\n", "\r\n");
+                //sb = sb.Replace("\r\n\r\n", "\r\n");
+
                 string r = sb.ToString();
                 var rgr  =rg.Matches(r);
                 if (rgr.Count > 0)
